@@ -467,13 +467,15 @@ def main():
         print(f'WARNING: could not initialize Neon database on startup: {e}', flush=True)
     print(f'Ledger v4 running on port {PORT}', flush=True)
     print(
-        'CONFIG CHECK -- APP_URL=%r | GOOGLE_CLIENT_ID starts with %r (len %d) | '
-        'GOOGLE_CLIENT_SECRET ends with %r (len %d) | SESSION_SECRET set: %s | DATABASE_URL set: %s'
+        'CONFIG CHECK -- APP_URL=%r | GOOGLE_CLIENT_ID: first6=%r last10=%r len=%d | '
+        'GOOGLE_CLIENT_SECRET: first6=%r last6=%r len=%d | SESSION_SECRET set: %s | DATABASE_URL set: %s'
         % (
             APP_URL,
-            GOOGLE_CLIENT_ID[:20] if GOOGLE_CLIENT_ID else '(empty)',
+            GOOGLE_CLIENT_ID[:6] if GOOGLE_CLIENT_ID else '(empty)',
+            GOOGLE_CLIENT_ID[-10:] if GOOGLE_CLIENT_ID else '(empty)',
             len(GOOGLE_CLIENT_ID),
-            GOOGLE_CLIENT_SECRET[-4:] if GOOGLE_CLIENT_SECRET else '(empty)',
+            GOOGLE_CLIENT_SECRET[:6] if GOOGLE_CLIENT_SECRET else '(empty)',
+            GOOGLE_CLIENT_SECRET[-6:] if GOOGLE_CLIENT_SECRET else '(empty)',
             len(GOOGLE_CLIENT_SECRET),
             bool(SESSION_SECRET),
             bool(DATABASE_URL),
