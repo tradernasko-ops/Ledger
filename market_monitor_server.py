@@ -176,20 +176,20 @@ PAGE = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 <style>
 *{box-sizing:border-box}
 :root{
-  --bg:#09090b;
-  --card-bg:rgba(255,255,255,.035);
-  --card-bg-solid:#18181b;
-  --card-border:rgba(255,255,255,.09);
-  --ink:#f4f4f5;
-  --muted:#8b8f9a;
-  --muted-2:#5b5f6b;
-  --amber:#e5b842;
-  --amber-ink:#2b1f04;
-  --amber-soft:rgba(229,184,66,.12);
-  --pos:#22c55e;
-  --pos-soft:rgba(34,197,94,.12);
-  --neg:#ef4444;
-  --neg-soft:rgba(239,68,68,.12);
+  --bg:#291c0e;
+  --card-bg:rgba(41,28,14,.4);
+  --card-bg-solid:#33260f;
+  --card-border:rgba(167,141,120,.2);
+  --ink:#e1d4c2;
+  --muted:#a78d78;
+  --muted-2:#8a7360;
+  --amber:#a78d78;
+  --amber-ink:#291c0e;
+  --amber-soft:rgba(167,141,120,.15);
+  --pos:#9cb08d;
+  --pos-soft:rgba(156,176,141,.14);
+  --neg:#b0685a;
+  --neg-soft:rgba(176,104,90,.14);
   --radius-lg:18px;
   --radius-md:12px;
   --radius-sm:9px;
@@ -198,9 +198,9 @@ PAGE = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 body{margin:0;background:var(--bg);color:var(--ink);font:15px Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
 .mesh-bg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
 .mesh-blob{position:absolute;border-radius:50%;filter:blur(90px);will-change:transform}
-.mesh-blob.b1{width:56vw;height:56vw;max-width:640px;max-height:640px;background:radial-gradient(circle,#1a2c6e 0%,transparent 68%);opacity:.4;top:-16vw;left:-12vw;animation:meshDrift1 32s ease-in-out infinite}
-.mesh-blob.b2{width:50vw;height:50vw;max-width:600px;max-height:600px;background:radial-gradient(circle,#2c2c33 0%,transparent 68%);opacity:.4;bottom:-18vw;right:-10vw;animation:meshDrift2 38s ease-in-out infinite}
-.mesh-blob.b3{width:40vw;height:40vw;max-width:480px;max-height:480px;background:radial-gradient(circle,#e5b842 0%,transparent 70%);opacity:.1;top:34%;left:52%;animation:meshDrift3 44s ease-in-out infinite}
+.mesh-blob.b1{width:56vw;height:56vw;max-width:640px;max-height:640px;background:radial-gradient(circle,#6e473b 0%,transparent 68%);opacity:.45;top:-16vw;left:-12vw;animation:meshDrift1 32s ease-in-out infinite}
+.mesh-blob.b2{width:50vw;height:50vw;max-width:600px;max-height:600px;background:radial-gradient(circle,#a78d78 0%,transparent 68%);opacity:.3;bottom:-18vw;right:-10vw;animation:meshDrift2 38s ease-in-out infinite}
+.mesh-blob.b3{width:40vw;height:40vw;max-width:480px;max-height:480px;background:radial-gradient(circle,#beb5a9 0%,transparent 70%);opacity:.14;top:34%;left:52%;animation:meshDrift3 44s ease-in-out infinite}
 @keyframes meshDrift1{0%,100%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(6vw,7vw) rotate(18deg) scale(1.14)}}
 @keyframes meshDrift2{0%,100%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(-6vw,-5vw) rotate(-16deg) scale(1.1)}}
 @keyframes meshDrift3{0%,100%{transform:translate(0,0) scale(1);opacity:.1}50%{transform:translate(-4vw,4vw) scale(1.22);opacity:.16}}
@@ -210,16 +210,16 @@ header{height:calc(64px + env(safe-area-inset-top));padding-top:env(safe-area-in
 .brand img{width:30px;height:30px;object-fit:contain;border-radius:8px}
 .brand i{font-size:10px;padding:4px 7px;border:1px solid var(--amber-soft);background:var(--amber-soft);color:var(--amber);border-radius:99px;letter-spacing:.4px;font-style:normal}
 nav{display:flex;gap:2px;padding:4px;border:1px solid var(--card-border);border-radius:12px;background:rgba(255,255,255,.02)}
-nav button{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:9px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease)}
-nav button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
-nav button.active{background:linear-gradient(135deg,rgba(229,184,66,.24),rgba(229,184,66,.08));color:#f6d98a;text-shadow:0 0 10px rgba(229,184,66,.5);border:1px solid rgba(229,184,66,.38);box-shadow:0 2px 18px rgba(229,184,66,.22),inset 0 1px 0 rgba(255,255,255,.1)}
+nav button{border:0;border-radius:9px;background:transparent;color:#beb5a9;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease)}
+nav button:hover{background:rgba(190,181,169,.12);color:var(--ink)}
+nav button.active{background:linear-gradient(135deg,#e1d4c2,#beb5a9);color:#291c0e;text-shadow:none;border:1px solid rgba(255,255,255,.3);box-shadow:0 2px 16px rgba(190,181,169,.35),inset 0 1px 0 rgba(255,255,255,.4)}
 button,.button{border:0;border-radius:var(--radius-sm);padding:11px 16px;background:rgba(255,255,255,.06);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;min-height:44px;transition:background .16s var(--ease),transform .12s var(--ease)}
 button:hover,.button:hover{background:rgba(255,255,255,.1)}
 button:active,.button:active{transform:scale(.97)}
-.primary{position:relative;background:linear-gradient(135deg,rgba(229,184,66,.24),rgba(229,184,66,.10));color:#f6d98a;font-weight:700;border:1px solid rgba(229,184,66,.42);text-shadow:0 0 12px rgba(229,184,66,.55);box-shadow:0 4px 26px rgba(229,184,66,.2),inset 0 1px 0 rgba(255,255,255,.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-.primary:hover{background:linear-gradient(135deg,rgba(229,184,66,.34),rgba(229,184,66,.16));box-shadow:0 8px 34px rgba(229,184,66,.32),inset 0 1px 0 rgba(255,255,255,.2);border-color:rgba(229,184,66,.6);transform:translateY(-1px)}
+.primary{position:relative;background:linear-gradient(135deg,#e1d4c2,#beb5a9);color:#291c0e;font-weight:700;text-shadow:none;border:1px solid rgba(255,255,255,.3);box-shadow:0 6px 26px rgba(190,181,169,.35),inset 0 1px 0 rgba(255,255,255,.4);backdrop-filter:none;-webkit-backdrop-filter:none}
+.primary:hover{background:linear-gradient(135deg,#ecdfcd,#c7beb0);box-shadow:0 8px 32px rgba(190,181,169,.45),inset 0 1px 0 rgba(255,255,255,.5);border-color:rgba(255,255,255,.4);transform:translateY(-1px)}
 .danger{color:#fca5a5;background:var(--neg-soft)}
-.danger:hover{background:rgba(239,68,68,.2)}
+.danger:hover{background:rgba(176,104,90,.22)}
 .muted{color:var(--muted)}
 .wrap{max-width:1180px;margin:auto;padding:28px 5vw 48px}
 .page{display:none}
@@ -235,8 +235,8 @@ button:active,.button:active{transform:scale(.97)}
 .card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.16);box-shadow:0 40px 70px -20px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.09)}
 .label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.9px}
 .value{font-size:24px;font-weight:800;margin-top:8px;letter-spacing:-.6px;color:var(--ink);font-variant-numeric:tabular-nums}
-.pos{color:var(--pos);text-shadow:0 0 12px rgba(52,211,153,.5),0 0 26px rgba(52,211,153,.18);letter-spacing:.01em}
-.neg{color:var(--neg);text-shadow:0 0 12px rgba(248,113,113,.45),0 0 26px rgba(248,113,113,.16);letter-spacing:.01em}
+.pos{color:var(--pos);text-shadow:0 0 12px rgba(156,176,141,.5),0 0 26px rgba(156,176,141,.2);letter-spacing:.01em}
+.neg{color:var(--neg);text-shadow:0 0 12px rgba(176,104,90,.45),0 0 26px rgba(176,104,90,.18);letter-spacing:.01em}
 .chart{height:180px;margin-top:14px;position:relative}
 .chart svg{width:100%;height:100%}
 .section{margin-top:22px}
@@ -244,7 +244,7 @@ button:active,.button:active{transform:scale(.97)}
 .section>.label:after{content:"";height:1px;flex:1;background:var(--card-border)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
 .toolbar input,.toolbar select,input,select,textarea{background:rgba(255,255,255,.045);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.09);border-radius:var(--radius-sm);padding:12px 13px;color:var(--ink);font-family:inherit;font-size:16px;min-height:44px;transition:border-color .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
-.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft),0 0 18px rgba(229,184,66,.25);background:rgba(255,255,255,.07)}
+.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft),0 0 18px rgba(167,141,120,.25);background:rgba(255,255,255,.07)}
 textarea{width:100%;min-height:76px;resize:vertical}
 input.pnl-pos{border-color:var(--pos)!important;box-shadow:0 0 0 4px var(--pos-soft)!important}
 input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-soft)!important}
@@ -255,7 +255,7 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .trade:hover{background:rgba(255,255,255,.035)}
 .trade:active{background:rgba(255,255,255,.06)}
 .symbol{font-weight:700;letter-spacing:.1px}
-.symbol:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;box-shadow:0 0 8px rgba(229,184,66,.6)}
+.symbol:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;box-shadow:0 0 8px rgba(167,141,120,.6)}
 .trade:nth-child(odd) .symbol:before{background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,.6)}
 .empty{padding:32px 20px;text-align:center;color:var(--muted);border:1px dashed var(--card-border);border-radius:var(--radius-md);margin:6px}
 
@@ -274,14 +274,14 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .mm-filters{display:flex;gap:6px;padding:4px;border:1px solid var(--card-border);border-radius:99px;background:rgba(255,255,255,.02);width:fit-content;margin-bottom:18px;overflow-x:auto}
 .mm-pill{border:0;border-radius:99px;background:transparent;color:var(--muted);padding:9px 16px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .16s var(--ease),color .16s var(--ease)}
 .mm-pill:hover{background:rgba(255,255,255,.05);color:var(--ink)}
-.mm-pill.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 10px rgba(229,184,66,.3)}
+.mm-pill.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 10px rgba(167,141,120,.3)}
 .mm-card{position:relative;overflow:hidden;background:var(--card-bg);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:10px;cursor:pointer;box-shadow:0 20px 40px -18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
 .mm-card:before{content:"";position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,255,255,.06),rgba(255,255,255,0) 45%);pointer-events:none}
 .mm-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 26px 50px -18px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)}
 .mm-card:active{transform:scale(.995)}
 .mm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
 .mm-ticker{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.2px}
-.mm-ticker.mkt-stock{background:var(--amber-soft);color:var(--amber);box-shadow:0 0 12px rgba(229,184,66,.25)}
+.mm-ticker.mkt-stock{background:var(--amber-soft);color:var(--amber);box-shadow:0 0 12px rgba(167,141,120,.25)}
 .mm-ticker.mkt-futures{background:rgba(244,114,182,.12);color:#f472b6;box-shadow:0 0 12px rgba(244,114,182,.22)}
 .mm-ticker.mkt-forex{background:rgba(96,165,250,.12);color:#60a5fa;box-shadow:0 0 12px rgba(96,165,250,.22)}
 .mm-time{font-size:11.5px;color:var(--muted-2)}
@@ -289,12 +289,12 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .mm-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .mm-source{font-size:12px;color:var(--muted)}
 .mm-sentiment{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:99px;font-size:10.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
-.mm-sentiment.bull{background:var(--pos-soft);color:var(--pos);text-shadow:0 0 10px rgba(34,197,94,.4)}
-.mm-sentiment.bear{background:var(--neg-soft);color:var(--neg);text-shadow:0 0 10px rgba(239,68,68,.35)}
+.mm-sentiment.bull{background:var(--pos-soft);color:var(--pos);text-shadow:0 0 10px rgba(156,176,141,.45)}
+.mm-sentiment.bear{background:var(--neg-soft);color:var(--neg);text-shadow:0 0 10px rgba(176,104,90,.4)}
 .mm-sentiment svg{flex-shrink:0}
 .mm-new{animation:mmFlash .9s var(--ease)}
-#alertsToggleBtn.alerts-on{background:var(--pos-soft);color:var(--pos);box-shadow:0 0 0 1px rgba(34,197,94,.25) inset}
-@keyframes mmFlash{0%{background:rgba(229,184,66,.14)}100%{background:transparent}}
+#alertsToggleBtn.alerts-on{background:var(--pos-soft);color:var(--pos);box-shadow:0 0 0 1px rgba(156,176,141,.3) inset}
+@keyframes mmFlash{0%{background:rgba(167,141,120,.14)}100%{background:transparent}}
 
 /* Desktop side panel / mobile bottom drawer for news details */
 .newsPanel{position:fixed;inset:0;z-index:25;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,5,8,.6);backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .28s var(--ease),visibility 0s linear .28s}
@@ -367,10 +367,10 @@ body{overscroll-behavior:none}
 .full{grid-column:1/-1}
 .settings{max-width:700px}
 .account{display:flex;align-items:center;gap:15px}
-.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f0c65a,var(--amber));color:var(--amber-ink);display:grid;place-items:center;font-weight:800}
-.notice{padding:14px;border-radius:var(--radius-md);background:rgba(229,184,66,.08);border:1px solid var(--amber-soft);color:#e8d29a;margin:14px 0;font-size:13.5px;line-height:1.5}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a78d78,var(--amber));color:var(--amber-ink);display:grid;place-items:center;font-weight:800}
+.notice{padding:14px;border-radius:var(--radius-md);background:rgba(167,141,120,.08);border:1px solid var(--amber-soft);color:#d9c7ae;margin:14px 0;font-size:13.5px;line-height:1.5}
 .footer-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
-code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:5px;font-size:.9em}
+code{color:#c9b79f;background:rgba(167,141,120,.1);padding:2px 6px;border-radius:5px;font-size:.9em}
 .market-pulse{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .market-pulse:before{content:"";width:7px;height:7px;border-radius:99px;background:var(--pos);box-shadow:0 0 0 4px var(--pos-soft)}
 .market-pulse b{color:var(--pos);font-weight:800}
@@ -560,7 +560,7 @@ function smoothPath(pts){
   }
   return d;
 }
-function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e5b842" stop-opacity="0"/><stop offset="50%" stop-color="#e5b842" stop-opacity=".9"/><stop offset="100%" stop-color="#e5b842" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#22c55e':'#ef4444';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(255,255,255,.1)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
+function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#a78d78" stop-opacity="0"/><stop offset="50%" stop-color="#a78d78" stop-opacity=".9"/><stop offset="100%" stop-color="#a78d78" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#9cb08d':'#b0685a';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(225,212,194,.14)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
 function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
 function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
 function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
@@ -597,7 +597,7 @@ function renderMonitor(){let list=mmFeed.filter(n=>mmFilter==='all'||n.category=
 function setMonitorFilter(cat){mmFilter=cat;document.querySelectorAll('.mm-pill').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));renderMonitor()}
 function mmSparkSvg(pts,color){let w=560,h=70;let min=Math.min(...pts),max=Math.max(...pts),range=(max-min)||1;let mapped=pts.map((v,i)=>({x:i*(w/(pts.length-1)),y:h-6-(v-min)/range*(h-12)}));let d=smoothPath(mapped);return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:70px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 let mmCurrentId=null;
-function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurrentId=id;n.isNew=false;$('npTicker').textContent=n.tickerDisplay;$('npTicker').className='mm-ticker '+mmCatClass(n.category);$('npHeadline').textContent=n.headline;$('npMeta').textContent=`${n.source} · ${mmTimeAgo(n.datetime)} ago`;$('npSentimentPill').innerHTML=mmSentimentPill(n.sentiment);$('npBody').textContent=n.body;$('npImpact').textContent=n.impact;let up=n.sentiment==='bullish';$('npSpark').innerHTML=mmSparkSvg(n.spark,up?'#22c55e':'#ef4444');$('newsPanel').classList.add('open');lockScroll()}
+function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurrentId=id;n.isNew=false;$('npTicker').textContent=n.tickerDisplay;$('npTicker').className='mm-ticker '+mmCatClass(n.category);$('npHeadline').textContent=n.headline;$('npMeta').textContent=`${n.source} · ${mmTimeAgo(n.datetime)} ago`;$('npSentimentPill').innerHTML=mmSentimentPill(n.sentiment);$('npBody').textContent=n.body;$('npImpact').textContent=n.impact;let up=n.sentiment==='bullish';$('npSpark').innerHTML=mmSparkSvg(n.spark,up?'#9cb08d':'#b0685a');$('newsPanel').classList.add('open');lockScroll()}
 function closeNewsDetails(){$('newsPanel').classList.remove('open');unlockScroll()}
 function mmSimulateTick(){let monitorPage=document.getElementById('monitor');if(!monitorPage||!monitorPage.classList.contains('active'))return;let templates=[{headline:"Breaking: Apple Supplier Flags Component Shortage Ahead of Holiday Quarter",source:"Bloomberg",category:"stocks",tickerDisplay:"$AAPL",body:"A key Apple supplier warned of tightening component availability heading into the critical holiday shopping season, raising fulfillment concerns.",impact:"Supply constraints ahead of peak season can cap near-term revenue upside, a pattern that has weighed on shares in prior cycles."},{headline:"Breaking: OPEC+ Weighs Surprise Production Cut Amid Price Weakness",source:"Reuters",category:"futures",tickerDisplay:"/CL",body:"Delegates say OPEC+ members are discussing an unscheduled production cut at their next meeting in response to recent price softness.",impact:"Coordinated supply cuts from major producers are one of the more reliable near-term bullish catalysts for crude prices."},{headline:"Breaking: Swiss Franc Rallies as Safe-Haven Flows Accelerate",source:"MarketWatch",category:"forex",tickerDisplay:"USD/CHF",body:"The franc strengthened broadly as investors rotated into traditional safe-haven currencies amid renewed risk-off sentiment.",impact:"Safe-haven flows into the franc typically coincide with broader risk-off moves, pressuring USD/CHF lower."}];let t=templates[Math.floor(Math.random()*templates.length)];let sentiment=classifySentiment(t.headline);let entry=Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:Date.now(),spark:mmMakeSparkline(sentiment),isNew:true},t);mmFeed.unshift(entry);if(mmFeed.length>40)mmFeed.pop();renderMonitor();fireBreakingNotification(entry)}
 
