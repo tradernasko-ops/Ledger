@@ -84,6 +84,9 @@ def init_db():
                 """
             )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_user_email ON trades (user_email)")
+            # Migration: add the screenshot column to a table that may already
+            # exist in production from before this feature was added.
+            cur.execute("ALTER TABLE trades ADD COLUMN IF NOT EXISTS screenshot TEXT")
         conn.commit()
         print("Neon database ready: trades table checked/created.", flush=True)
     finally:
@@ -97,7 +100,7 @@ def db_load_trades(email):
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 "SELECT id, trade_date AS date, type, symbol, pnl, setup, side, entry, "
-                "exit_price AS exit, rr, notes FROM trades "
+                "exit_price AS exit, rr, notes, screenshot FROM trades "
                 "WHERE user_email = %s ORDER BY created_at DESC",
                 (email,),
             )
@@ -119,11 +122,11 @@ def db_insert_trade(email, trade):
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO trades (id, user_email, trade_date, type, symbol, pnl, setup, "
-                "side, entry, exit_price, rr, notes) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "side, entry, exit_price, rr, notes, screenshot) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     trade["id"], email, trade["date"], trade["type"], trade["symbol"],
                     trade["pnl"], trade["setup"], trade["side"], trade["entry"],
-                    trade["exit"], trade["rr"], trade["notes"],
+                    trade["exit"], trade["rr"], trade["notes"], trade["screenshot"],
                 ),
             )
         conn.commit()
@@ -138,12 +141,12 @@ def db_update_trade(email, trade_id, trade):
         with conn.cursor() as cur:
             cur.execute(
                 "UPDATE trades SET trade_date=%s, type=%s, symbol=%s, pnl=%s, setup=%s, "
-                "side=%s, entry=%s, exit_price=%s, rr=%s, notes=%s "
+                "side=%s, entry=%s, exit_price=%s, rr=%s, notes=%s, screenshot=%s "
                 "WHERE id=%s AND user_email=%s",
                 (
                     trade["date"], trade["type"], trade["symbol"], trade["pnl"],
                     trade["setup"], trade["side"], trade["entry"], trade["exit"],
-                    trade["rr"], trade["notes"], trade_id, email,
+                    trade["rr"], trade["notes"], trade["screenshot"], trade_id, email,
                 ),
             )
             updated = cur.rowcount > 0
@@ -190,20 +193,26 @@ nav{padding:5px;border:1px solid var(--stroke);border-radius:13px;background:#07
 <section class="page active" id="dashboard"><div class="hero"><div><div class="terminal-kicker">Performance overview</div><h1>Your trading dashboard</h1><p class="muted" id="dashSub">Sign in to see your personal journal.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="grid"><div class="card"><div class="label">Net P&amp;L</div><div id="net" class="value">—</div></div><div class="card"><div class="label">Trades</div><div id="count" class="value">—</div></div><div class="card"><div class="label">Win rate</div><div id="winrate" class="value">—</div></div><div class="card"><div class="label">Profit factor</div><div id="factor" class="value">—</div></div></div><div class="card section"><div class="label">Equity curve</div><div class="chart" id="chart"></div></div><div class="card section"><div class="label">Recent trades</div><div id="recent"></div></div></section>
 <section class="page" id="journal"><div class="hero"><div><h1>Trade journal</h1><p class="muted">Search and review your saved trades.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button></div><div class="card trades"><div id="journalList"></div></div></section>
 <section class="page" id="settings"><div class="settings"><div class="hero"><div><h1>Settings</h1><p class="muted">Your journal is private to your signed-in account.</p></div></div><div class="card"><div class="label">Account</div><div id="account" class="notice">Checking sign-in…</div></div><div class="card section"><div class="label">Storage</div><p class="muted">Trades are stored in a Neon Postgres database, scoped to your Google account — they persist across Render restarts, sleeps, and redeploys.</p><p class="muted">Set <code>DATABASE_URL</code> in Render to your Neon connection string to enable saving. You can also browse or edit rows directly in Neon's SQL Editor at any time.</p></div><div class="card section"><div class="label">Google login setup</div><p class="muted">Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>SESSION_SECRET</code>, and <code>APP_URL</code> in Render. In Google Cloud Console, add <code id="redirect"></code> as an authorized redirect URI.</p></div></div></section>
-</main><div class="modal" id="modal"><div class="dialog"><h2 id="formTitle">Log a trade</h2><div class="formgrid"><label>Date<input id="date" type="date"></label><label>Market<select id="type"><option>stock</option><option>forex</option><option>crypto</option><option>future</option><option>index</option></select></label><label>Symbol<input id="symbol" placeholder="AAPL" maxlength="16"></label><label>P&amp;L<input id="pnl" type="number" step="0.01" placeholder="125.50"></label><label>Setup<input id="setup" placeholder="Breakout"></label><label>Side<select id="side"><option>Long</option><option>Short</option></select></label><label>Entry<input id="entry" placeholder="Price"></label><label>Exit<input id="exit" placeholder="Price"></label><label>R:R<input id="rr" placeholder="2.5"></label><label class="full">Notes<textarea id="notes" placeholder="What did you see? What will you repeat or improve?"></textarea></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
+</main><div class="modal" id="modal"><div class="dialog"><h2 id="formTitle">Log a trade</h2><div class="formgrid"><label>Date<input id="date" type="date"></label><label>Market<select id="type"><option>stock</option><option>forex</option><option>crypto</option><option>future</option><option>index</option></select></label><label>Symbol<input id="symbol" placeholder="AAPL" maxlength="16"></label><label>P&amp;L<input id="pnl" type="number" step="0.01" placeholder="125.50"></label><label>Setup<input id="setup" placeholder="Breakout"></label><label>Side<select id="side"><option>Long</option><option>Short</option></select></label><label>Entry<input id="entry" placeholder="Price"></label><label>Exit<input id="exit" placeholder="Price"></label><label>R:R<input id="rr" placeholder="2.5"></label><label class="full">Notes<textarea id="notes" placeholder="What did you see? What will you repeat or improve?"></textarea></label><label class="full">Screenshot of the executed trade<input id="shotFile" type="file" accept="image/*"><div id="shotPreviewWrap" style="display:none;margin-top:8px"><img id="shotPreview" style="max-width:100%;max-height:220px;border-radius:10px;display:block"><button type="button" onclick="removeShot()" style="margin-top:8px" class="danger">Remove image</button></div></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
+<div class="modal" id="lightbox" onclick="closeLightbox()"><img id="lightboxImg" style="max-width:92vw;max-height:88vh;border-radius:14px"></div>
 <script>
-let trades=[],me=null,editing=null;const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
+let trades=[],me=null,editing=null,pendingShot='';const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
 async function api(url,opt={}){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');return r.json()}
 function money(x){return (x>=0?'+$':'-$')+Math.abs(x).toFixed(2)}function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.textContent.trim().toLowerCase()===id));render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
-function rows(list,actions=false){if(!list.length)return '<div class="empty">No trades yet. Log your first trade when you are ready.</div>';return list.map(t=>`<div class="trade"><div><div class="symbol">${esc(t.symbol)}</div><div class="muted">${esc(t.date)} · ${esc(t.side||'')}</div></div><div class="hide-mobile">${esc(t.type)}</div><div class="hide-mobile">${esc(t.setup||'—')}</div><div class="${t.pnl>0?'pos':t.pnl<0?'neg':''}">${money(t.pnl)}</div><div>${actions?`<button onclick="editTrade('${t.id}')">Edit</button> <button class="danger" onclick="removeTrade('${t.id}')">Delete</button>`:''}</div></div>`).join('')}
+function rows(list,actions=false){if(!list.length)return '<div class="empty">No trades yet. Log your first trade when you are ready.</div>';return list.map(t=>`<div class="trade"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" onclick="openLightbox('${t.id}')" style="width:22px;height:22px;object-fit:cover;border-radius:5px;vertical-align:middle;cursor:pointer;margin-left:7px;border:1px solid #2a3c62">`:''}</div><div class="muted">${esc(t.date)} · ${esc(t.side||'')}</div></div><div class="hide-mobile">${esc(t.type)}</div><div class="hide-mobile">${esc(t.setup||'—')}</div><div class="${t.pnl>0?'pos':t.pnl<0?'neg':''}">${money(t.pnl)}</div><div>${actions?`<button onclick="editTrade('${t.id}')">Edit</button> <button class="danger" onclick="removeTrade('${t.id}')">Delete</button>`:''}</div></div>`).join('')}
+function openLightbox(id){let t=trades.find(x=>x.id===id);if(!t||!t.screenshot)return;$('lightboxImg').src=t.screenshot;$('lightbox').classList.add('open')}
+function closeLightbox(){$('lightbox').classList.remove('open')}
 function stats(){let n=trades.length,w=trades.filter(t=>t.pnl>0),l=trades.filter(t=>t.pnl<0),net=trades.reduce((a,t)=>a+t.pnl,0),gp=w.reduce((a,t)=>a+t.pnl,0),gl=Math.abs(l.reduce((a,t)=>a+t.pnl,0));return{n,w,l,net,pf:gl?gp/gl:(gp?'∞':0)}}
 function draw(){let a=[...trades].reverse(),v=0,pts=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...pts),max=Math.max(0,...pts),range=max-min||1,w=600,h=160;let p=pts.map((x,i)=>`${i*(w/(pts.length-1||1))},${h-10-(x-min)/range*(h-24)}`).join(' ');$('chart').innerHTML=trades.length?`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${h-10-(0-min)/range*(h-24)}" y2="${h-10-(0-min)/range*(h-24)}" stroke="#425578"/><polyline fill="none" stroke="${v>=0?'#55dfad':'#ff8989'}" stroke-width="3" points="${p}"/></svg>`:'<div class="empty">Your equity curve will appear here.</div>'}
 function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
-function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('modal').classList.add('open')};function closeTrade(){$('modal').classList.remove('open')}
-function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes'])$(k).value=t[k]??'';$('modal').classList.add('open')}
-async function saveTrade(){let x={date:$('date').value,type:$('type').value,symbol:$('symbol').value,pnl:$('pnl').value,setup:$('setup').value,side:$('side').value,entry:$('entry').value,exit:$('exit').value,rr:$('rr').value,notes:$('notes').value};if(!x.symbol.trim())return $('formMsg').textContent='Please enter a symbol.';try{let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});trades=d.trades;closeTrade();render()}catch(e){$('formMsg').textContent=e.message}}
+function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
+function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
+$('shotFile').addEventListener('change',function(e){let file=e.target.files[0];if(!file)return;let reader=new FileReader();reader.onload=function(ev){let img=new Image();img.onload=function(){let maxW=900,scale=Math.min(1,maxW/img.width);let canvas=document.createElement('canvas');canvas.width=img.width*scale;canvas.height=img.height*scale;let ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);pendingShot=canvas.toDataURL('image/jpeg',0.72);setShotPreview(pendingShot)};img.src=ev.target.result};reader.readAsDataURL(file)});
+function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('shotFile').value='';pendingShot='';setShotPreview('');$('modal').classList.add('open')};function closeTrade(){$('modal').classList.remove('open')}
+function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes'])$(k).value=t[k]??'';$('shotFile').value='';pendingShot=t.screenshot||'';setShotPreview(pendingShot);$('modal').classList.add('open')}
+async function saveTrade(){let x={date:$('date').value,type:$('type').value,symbol:$('symbol').value,pnl:$('pnl').value,setup:$('setup').value,side:$('side').value,entry:$('entry').value,exit:$('exit').value,rr:$('rr').value,notes:$('notes').value,screenshot:pendingShot};if(!x.symbol.trim())return $('formMsg').textContent='Please enter a symbol.';try{let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});trades=d.trades;closeTrade();render()}catch(e){$('formMsg').textContent=e.message}}
 async function removeTrade(id){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+id,{method:'DELETE'})).trades;render()}catch(e){alert(e.message)}}
 function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
@@ -246,6 +255,11 @@ def clean_trade(d):
     symbol = str(d.get('symbol', '')).strip().upper()[:16]
     if not symbol:
         raise ValueError('Symbol is required.')
+    screenshot = str(d.get('screenshot', '') or '').strip()
+    if screenshot and not screenshot.startswith('data:image/'):
+        screenshot = ''
+    if len(screenshot) > 1_400_000:
+        raise ValueError('Screenshot is too large. Try a smaller image.')
     return {
         'date': str(d.get('date', ''))[:10],
         'type': str(d.get('type', 'stock'))[:15],
@@ -257,6 +271,7 @@ def clean_trade(d):
         'exit': str(d.get('exit', '')).strip()[:30],
         'rr': str(d.get('rr', '')).strip()[:20],
         'notes': str(d.get('notes', '')).strip()[:2000],
+        'screenshot': screenshot,
     }
 
 
