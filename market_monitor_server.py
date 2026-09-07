@@ -281,6 +281,7 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .mm-sentiment.bear{background:var(--neg-soft);color:var(--neg);text-shadow:0 0 10px rgba(239,68,68,.35)}
 .mm-sentiment svg{flex-shrink:0}
 .mm-new{animation:mmFlash .9s var(--ease)}
+#alertsToggleBtn.alerts-on{background:var(--pos-soft);color:var(--pos);box-shadow:0 0 0 1px rgba(34,197,94,.25) inset}
 @keyframes mmFlash{0%{background:rgba(229,184,66,.14)}100%{background:transparent}}
 
 /* Desktop side panel / mobile bottom drawer for news details */
@@ -300,6 +301,14 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .np-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin:18px 0 8px}
 .np-impact{font-size:13.5px;line-height:1.6;color:#cdd0d6;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:12px 14px}
 .mm-spark{margin-top:6px}
+
+/* ---------- TradingView widget containers ---------- */
+#tvChartCard{height:560px}
+#tvScreenerCard{height:640px}
+#tvChartCard,#tvScreenerContainer{border-radius:calc(var(--radius-lg) - 4px);overflow:hidden}
+#tvChartContainer,#tvScreenerContainer{background:rgba(0,0,0,.15)}
+.tv-loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px}
+@media(max-width:700px){#tvChartCard{height:420px}#tvScreenerCard{height:520px}}
 
 /* ---------- Body scroll lock while a modal is open ---------- */
 body{overscroll-behavior:none}
@@ -398,17 +407,18 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
   nav button:nth-child(1):after{content:'◫'}
   nav button:nth-child(2):after{content:'≡'}
   nav button:nth-child(3):after{content:'◉'}
-  nav button:nth-child(4):after{content:'⚙'}
+  nav button:nth-child(4):after{content:'◧'}
+  nav button:nth-child(5):after{content:'⚙'}
   .market-pulse{display:none}
   .trade{grid-template-columns:1fr 1fr}
   .trade .hide-mobile{display:none}
   .skeleton-row{grid-template-columns:1fr 1fr}
 }
-</style></head><body><header><div class="brand"><img src="/header-bull.png" alt="Ledger">Ledger</div><div class="market-pulse"><b>● Live</b> &nbsp; Personal trading terminal</div><nav><button class="active" data-tab="dashboard" onclick="show('dashboard')">Dashboard</button><button data-tab="journal" onclick="show('journal')">Journal</button><button data-tab="monitor" onclick="show('monitor')">Market Monitor</button><button data-tab="settings" onclick="show('settings')">Settings</button><button id="installBtn" hidden onclick="installApp()">Install</button></nav></header><main class="wrap">
+</style></head><body><header><div class="brand"><img src="/header-bull.png" alt="Ledger">Ledger</div><div class="market-pulse"><b>● Live</b> &nbsp; Personal trading terminal</div><nav><button class="active" data-tab="dashboard" onclick="show('dashboard')">Dashboard</button><button data-tab="journal" onclick="show('journal')">Journal</button><button data-tab="monitor" onclick="show('monitor')">Market Monitor</button><button data-tab="screener" onclick="show('screener')">Screener</button><button data-tab="settings" onclick="show('settings')">Settings</button><button id="installBtn" hidden onclick="installApp()">Install</button></nav></header><main class="wrap">
 <section class="page active" id="dashboard"><div class="hero"><div><div class="terminal-kicker">Performance overview</div><h1>Your trading dashboard</h1><p class="muted" id="dashSub">Sign in to see your personal journal.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="grid"><div class="card"><div class="label">Net P&amp;L</div><div id="net" class="value">—</div></div><div class="card"><div class="label">Trades</div><div id="count" class="value">—</div></div><div class="card"><div class="label">Win rate</div><div id="winrate" class="value">—</div></div><div class="card"><div class="label">Profit factor</div><div id="factor" class="value">—</div></div></div><div class="card section"><div class="label">Equity curve</div><div class="chart" id="chart"></div></div><div class="card section"><div class="label">Recent trades</div><div id="recent"></div></div></section>
 <section class="page" id="journal"><div class="hero"><div><h1>Trade journal</h1><p class="muted">Search and review your saved trades.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button></div><div class="card trades"><div id="journalList"></div></div></section>
 <section class="page" id="monitor">
-<div class="hero"><div><div class="terminal-kicker">Live feed · simulated</div><h1>Market Monitor</h1><p class="muted">Headline-driven bias across stocks, futures, and forex.</p></div></div>
+<div class="hero"><div><div class="terminal-kicker">Live feed · simulated</div><h1>Market Monitor</h1><p class="muted">Headline-driven bias across stocks, futures, and forex.</p></div><button class="button" id="alertsToggleBtn" onclick="toggleBreakingAlerts()">🔔 Enable Breaking Alerts</button></div>
 <div class="mm-filters" id="mmFilters">
   <button class="mm-pill active" data-cat="all" onclick="setMonitorFilter('all')">All Feeds</button>
   <button class="mm-pill" data-cat="stocks" onclick="setMonitorFilter('stocks')">Stocks</button>
@@ -416,6 +426,28 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
   <button class="mm-pill" data-cat="forex" onclick="setMonitorFilter('forex')">Forex</button>
 </div>
 <div id="mmFeed"></div>
+</section>
+<section class="page" id="screener">
+<div class="hero"><div><div class="terminal-kicker">Live market data · TradingView</div><h1>Screener &amp; Charts</h1><p class="muted">Search a ticker to load an interactive chart, or scan the full market below.</p></div></div>
+<div class="toolbar" style="margin-bottom:14px">
+  <input id="tvSymbolInput" placeholder="Type a ticker, e.g. AAPL, BTCUSDT, EURUSD" style="flex:1;min-width:220px" onkeydown="if(event.key==='Enter')loadChartFromInput()">
+  <select id="tvAssetType" onchange="loadChartFromInput()">
+    <option value="stock">Stock</option>
+    <option value="crypto">Crypto</option>
+    <option value="forex">Forex</option>
+    <option value="future">Future</option>
+  </select>
+  <button class="primary" onclick="loadChartFromInput()">Load Chart</button>
+</div>
+<div class="card section" style="padding:8px" id="tvChartCard">
+  <div id="tvChartContainer" style="height:100%;width:100%"></div>
+</div>
+<div class="section">
+  <div class="label">Full market screener</div>
+  <div class="card" style="padding:6px;margin-top:10px" id="tvScreenerCard">
+    <div id="tvScreenerContainer" style="height:100%;width:100%"></div>
+  </div>
+</div>
 </section>
 <section class="page" id="settings"><div class="settings"><div class="hero"><div><h1>Settings</h1><p class="muted">Your journal is private to your signed-in account.</p></div></div><div class="card"><div class="label">Account</div><div id="account" class="notice">Checking sign-in…</div></div><div class="card section"><div class="label">Storage</div><p class="muted">Trades are stored in a Neon Postgres database, scoped to your Google account — they persist across Render restarts, sleeps, and redeploys.</p><p class="muted">Set <code>DATABASE_URL</code> in Render to your Neon connection string to enable saving. You can also browse or edit rows directly in Neon's SQL Editor at any time.</p></div><div class="card section"><div class="label">Google login setup</div><p class="muted">Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>SESSION_SECRET</code>, and <code>APP_URL</code> in Render. In Google Cloud Console, add <code id="redirect"></code> as an authorized redirect URI.</p></div></div></section>
 </main><div class="modal" id="modal"><div class="dialog"><div class="drag-handle"></div><h2 id="formTitle">Log a trade</h2><div class="formgrid"><label>Market<select id="type"><option>stock</option><option>forex</option><option>crypto</option><option>future</option><option>index</option></select></label><label>Symbol<input id="symbol" placeholder="AAPL" maxlength="16"></label><label>Entry<input id="entry" placeholder="Price"></label><label>Exit<input id="exit" placeholder="Price"></label><label>P&amp;L<input id="pnl" type="number" step="0.01" placeholder="125.50"></label><label>R:R<input id="rr" placeholder="2.5"></label><label>Date<input id="date" type="date"></label><label>Side<select id="side"><option>Long</option><option>Short</option></select></label><label class="full">Setup<input id="setup" placeholder="Breakout"></label><label class="full">Notes<textarea id="notes" placeholder="What did you see? What will you repeat or improve?"></textarea></label><label class="full">Screenshot of the executed trade
@@ -470,6 +502,7 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
 </div>
 <div class="footer-actions">
   <button class="danger" onclick="deleteFromDetails()">Delete</button>
+  <button onclick="viewChartForTrade()">View Chart</button>
   <button onclick="closeDetails();editTrade(dtCurrentId)">Edit</button>
   <button class="primary" onclick="closeDetails()">Close</button>
 </div>
@@ -479,13 +512,22 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
 let trades=[],me=null,editing=null,pendingShot='';const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
 async function api(url,opt={}){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');return r.json()}
 function money(x){return (x>=0?'+$':'-$')+Math.abs(x).toFixed(2)}function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='monitor')renderMonitor();render()}
+function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='monitor')renderMonitor();if(id==='screener')initScreenerTab();render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
 function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:40%;height:9px"></div></div><div class="hide-mobile ghost" style="width:50%"></div><div class="hide-mobile ghost" style="width:50%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
 function rows(list,fullList=false){if(!list.length)return fullList?'<div class="empty">No trades yet. Log your first trade when you are ready.</div>':skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:1px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
 let dtCurrentId=null;
 function openTradeDetails(id){let t=trades.find(x=>x.id===id);if(!t)return;dtCurrentId=id;$('dtSymbol').textContent=t.symbol;$('dtDate').textContent=t.date||'';let pnlEl=$('dtPnl');pnlEl.textContent=money(t.pnl);pnlEl.className='value '+(t.pnl>0?'pos':t.pnl<0?'neg':'');let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';$('dtBadges').innerHTML=`<span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span><span class="badge ${sideClass}">${esc(t.side||'Long')}</span>`;$('dtEntry').textContent=t.entry||'—';$('dtExit').textContent=t.exit||'—';$('dtRR').textContent=t.rr||'—';$('dtSetup').textContent=t.setup||'—';$('dtNotes').textContent=t.notes||'No notes added.';if(t.screenshot){$('dtShot').src=t.screenshot;$('dtShotWrap').style.display='block'}else{$('dtShotWrap').style.display='none'}$('detailsModal').classList.add('open');lockScroll()}
 function closeDetails(){$('detailsModal').classList.remove('open');unlockScroll()}
+
+/* ---------- TradingView widgets ---------- */
+function mapToTvSymbol(symbol,type){symbol=(symbol||'').toUpperCase().replace(/\s+/g,'').replace('/','');if(type==='crypto')return 'BINANCE:'+symbol+(symbol.endsWith('USDT')||symbol.endsWith('USD')?'':'USDT');if(type==='forex')return 'FX:'+symbol;if(type==='future')return 'CME_MINI:'+symbol;return 'NASDAQ:'+symbol}
+let tvChartLoaded=false,tvScreenerLoaded=false,currentTvSymbol='NASDAQ:AAPL';
+function loadTvChart(tvSymbol){currentTvSymbol=tvSymbol;let el=$('tvChartContainer');if(!el)return;el.innerHTML='<div class="tv-loading">Loading chart for '+esc(tvSymbol)+'…</div>';let outer=document.createElement('div');outer.className='tradingview-widget-container';outer.style.height='100%';outer.style.width='100%';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';inner.style.height='100%';inner.style.width='100%';outer.appendChild(inner);let script=document.createElement('script');script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';script.async=true;script.text=JSON.stringify({autosize:true,symbol:tvSymbol,interval:'D',timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',enable_publishing:false,allow_symbol_change:true,hide_top_toolbar:false,hide_legend:false,withdateranges:true,save_image:false,calendar:false,support_host:'https://www.tradingview.com'});outer.appendChild(script);el.innerHTML='';el.appendChild(outer)}
+function loadChartFromInput(){let raw=$('tvSymbolInput').value.trim();if(!raw)return;let type=$('tvAssetType').value;loadTvChart(mapToTvSymbol(raw,type))}
+function loadTvScreener(){if(tvScreenerLoaded)return;tvScreenerLoaded=true;let el=$('tvScreenerContainer');if(!el)return;let outer=document.createElement('div');outer.className='tradingview-widget-container';outer.style.height='100%';outer.style.width='100%';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';inner.style.height='100%';inner.style.width='100%';outer.appendChild(inner);let script=document.createElement('script');script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/embed-widget-screener.js';script.async=true;script.text=JSON.stringify({width:'100%',height:'100%',defaultColumn:'overview',defaultScreen:'top_gainers',market:'us',showToolbar:true,colorTheme:'dark',locale:'en'});outer.appendChild(script);el.innerHTML='';el.appendChild(outer)}
+function initScreenerTab(){if(!tvChartLoaded){tvChartLoaded=true;loadTvChart(currentTvSymbol)}loadTvScreener()}
+function viewChartForTrade(){let t=trades.find(x=>x.id===dtCurrentId);if(!t)return;let tvSym=mapToTvSymbol(t.symbol,t.type);closeDetails();show('screener');$('tvSymbolInput').value=t.symbol;$('tvAssetType').value=['stock','crypto','forex','future'].includes(t.type)?t.type:'stock';loadTvChart(tvSym)}
 let scrollLockY=0,scrollLockDepth=0;
 function lockScroll(){if(scrollLockDepth++>0)return;scrollLockY=window.scrollY;document.body.style.position='fixed';document.body.style.top=(-scrollLockY)+'px';document.body.style.left='0';document.body.style.right='0';document.body.style.width='100%'}
 function unlockScroll(){if(--scrollLockDepth>0)return;scrollLockDepth=0;document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';document.body.style.width='';window.scrollTo(0,scrollLockY)}
@@ -543,7 +585,13 @@ function mmSparkSvg(pts,color){let w=560,h=70;let min=Math.min(...pts),max=Math.
 let mmCurrentId=null;
 function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurrentId=id;n.isNew=false;$('npTicker').textContent=n.tickerDisplay;$('npTicker').className='mm-ticker '+mmCatClass(n.category);$('npHeadline').textContent=n.headline;$('npMeta').textContent=`${n.source} · ${mmTimeAgo(n.datetime)} ago`;$('npSentimentPill').innerHTML=mmSentimentPill(n.sentiment);$('npBody').textContent=n.body;$('npImpact').textContent=n.impact;let up=n.sentiment==='bullish';$('npSpark').innerHTML=mmSparkSvg(n.spark,up?'#22c55e':'#ef4444');$('newsPanel').classList.add('open');lockScroll()}
 function closeNewsDetails(){$('newsPanel').classList.remove('open');unlockScroll()}
-function mmSimulateTick(){let monitorPage=document.getElementById('monitor');if(!monitorPage||!monitorPage.classList.contains('active'))return;let templates=[{headline:"Breaking: Apple Supplier Flags Component Shortage Ahead of Holiday Quarter",source:"Bloomberg",category:"stocks",tickerDisplay:"$AAPL",body:"A key Apple supplier warned of tightening component availability heading into the critical holiday shopping season, raising fulfillment concerns.",impact:"Supply constraints ahead of peak season can cap near-term revenue upside, a pattern that has weighed on shares in prior cycles."},{headline:"Breaking: OPEC+ Weighs Surprise Production Cut Amid Price Weakness",source:"Reuters",category:"futures",tickerDisplay:"/CL",body:"Delegates say OPEC+ members are discussing an unscheduled production cut at their next meeting in response to recent price softness.",impact:"Coordinated supply cuts from major producers are one of the more reliable near-term bullish catalysts for crude prices."},{headline:"Breaking: Swiss Franc Rallies as Safe-Haven Flows Accelerate",source:"MarketWatch",category:"forex",tickerDisplay:"USD/CHF",body:"The franc strengthened broadly as investors rotated into traditional safe-haven currencies amid renewed risk-off sentiment.",impact:"Safe-haven flows into the franc typically coincide with broader risk-off moves, pressuring USD/CHF lower."}];let t=templates[Math.floor(Math.random()*templates.length)];let sentiment=classifySentiment(t.headline);mmFeed.unshift(Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:Date.now(),spark:mmMakeSparkline(sentiment),isNew:true},t));if(mmFeed.length>40)mmFeed.pop();renderMonitor()}
+function mmSimulateTick(){let monitorPage=document.getElementById('monitor');if(!monitorPage||!monitorPage.classList.contains('active'))return;let templates=[{headline:"Breaking: Apple Supplier Flags Component Shortage Ahead of Holiday Quarter",source:"Bloomberg",category:"stocks",tickerDisplay:"$AAPL",body:"A key Apple supplier warned of tightening component availability heading into the critical holiday shopping season, raising fulfillment concerns.",impact:"Supply constraints ahead of peak season can cap near-term revenue upside, a pattern that has weighed on shares in prior cycles."},{headline:"Breaking: OPEC+ Weighs Surprise Production Cut Amid Price Weakness",source:"Reuters",category:"futures",tickerDisplay:"/CL",body:"Delegates say OPEC+ members are discussing an unscheduled production cut at their next meeting in response to recent price softness.",impact:"Coordinated supply cuts from major producers are one of the more reliable near-term bullish catalysts for crude prices."},{headline:"Breaking: Swiss Franc Rallies as Safe-Haven Flows Accelerate",source:"MarketWatch",category:"forex",tickerDisplay:"USD/CHF",body:"The franc strengthened broadly as investors rotated into traditional safe-haven currencies amid renewed risk-off sentiment.",impact:"Safe-haven flows into the franc typically coincide with broader risk-off moves, pressuring USD/CHF lower."}];let t=templates[Math.floor(Math.random()*templates.length)];let sentiment=classifySentiment(t.headline);let entry=Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:Date.now(),spark:mmMakeSparkline(sentiment),isNew:true},t);mmFeed.unshift(entry);if(mmFeed.length>40)mmFeed.pop();renderMonitor();fireBreakingNotification(entry)}
+
+/* ---------- Breaking alerts (Notification API) ---------- */
+let breakingAlertsEnabled=false;
+function updateAlertsButton(){let btn=$('alertsToggleBtn');if(!btn)return;btn.textContent=breakingAlertsEnabled?'🔔 Alerts On':'🔔 Enable Breaking Alerts';btn.classList.toggle('alerts-on',breakingAlertsEnabled)}
+function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();try{new Notification('Breaking alerts enabled',{body:'You will be notified when new market-moving headlines break.'})}catch(e){}}else{alert('Notification permission was not granted.')}})}
+function fireBreakingNotification(entry){if(!breakingAlertsEnabled)return;if(!('Notification' in window)||Notification.permission!=='granted')return;let up=entry.sentiment==='bullish';let title=(up?'🟢 BULLISH':'🔴 BEARISH')+' · '+entry.tickerDisplay;try{new Notification(title,{body:entry.headline,tag:entry.id})}catch(e){}}
 mmSeed();
 setInterval(mmSimulateTick,18000);
 
