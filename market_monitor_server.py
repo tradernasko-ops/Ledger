@@ -207,7 +207,7 @@ nav button.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2p
 button,.button{border:0;border-radius:var(--radius-sm);padding:11px 16px;background:rgba(255,255,255,.06);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;min-height:44px;transition:background .16s var(--ease),transform .12s var(--ease)}
 button:hover,.button:hover{background:rgba(255,255,255,.1)}
 button:active,.button:active{transform:scale(.97)}
-.primary{background:var(--amber);color:var(--amber-ink);font-weight:700;box-shadow:0 4px 20px rgba(245,180,26,.28)}
+.primary{background:linear-gradient(135deg,#ffd166,var(--amber) 55%,#e69a0a);color:var(--amber-ink);font-weight:700;box-shadow:0 4px 20px rgba(245,180,26,.35),0 0 0 1px rgba(255,255,255,.08) inset}
 .primary:hover{background:#ffc23a;box-shadow:0 6px 26px rgba(245,180,26,.4);transform:translateY(-1px)}
 .danger{color:#fca5a5;background:var(--neg-soft)}
 .danger:hover{background:rgba(239,68,68,.2)}
@@ -221,20 +221,20 @@ button:active,.button:active{transform:scale(.97)}
 .hero p{margin:5px 0 0;font-size:13px;color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
 @media(min-width:860px){.grid{grid-template-columns:repeat(4,1fr)}}
-.card{position:relative;overflow:hidden;background:var(--card-bg);backdrop-filter:blur(14px);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.28);transition:transform .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease)}
+.card{position:relative;overflow:hidden;background:var(--card-bg);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--radius-lg);padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05);transition:transform .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease)}
 .card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.12);box-shadow:0 16px 36px rgba(0,0,0,.4)}
 .label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.9px}
 .value{font-size:24px;font-weight:800;margin-top:8px;letter-spacing:-.6px;color:var(--ink);font-variant-numeric:tabular-nums}
-.pos{color:var(--pos)}
-.neg{color:var(--neg)}
+.pos{color:var(--pos);text-shadow:0 0 14px rgba(34,197,94,.45)}
+.neg{color:var(--neg);text-shadow:0 0 14px rgba(239,68,68,.4)}
 .chart{height:180px;margin-top:14px;position:relative}
 .chart svg{width:100%;height:100%}
 .section{margin-top:22px}
 .section>.label{display:flex;align-items:center;gap:9px;margin-bottom:10px}
 .section>.label:after{content:"";height:1px;flex:1;background:var(--card-border)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
-.toolbar input,.toolbar select,input,select,textarea{background:rgba(255,255,255,.04);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:12px 13px;color:var(--ink);font-family:inherit;font-size:16px;min-height:44px;transition:border-color .16s var(--ease),box-shadow .16s var(--ease),background .16s var(--ease)}
-.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft);background:rgba(255,255,255,.06)}
+.toolbar input,.toolbar select,input,select,textarea{background:rgba(255,255,255,.045);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.09);border-radius:var(--radius-sm);padding:12px 13px;color:var(--ink);font-family:inherit;font-size:16px;min-height:44px;transition:border-color .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
+.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft),0 0 18px rgba(245,180,26,.25);background:rgba(255,255,255,.07)}
 textarea{width:100%;min-height:76px;resize:vertical}
 input.pnl-pos{border-color:var(--pos)!important;box-shadow:0 0 0 4px var(--pos-soft)!important}
 input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-soft)!important}
@@ -263,16 +263,16 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
   width:100%;max-width:640px;
   background:var(--card-bg-solid);
   border:1px solid var(--card-border);
-  border-radius:22px 22px 0 0;
-  padding:10px 22px calc(22px + env(safe-area-inset-bottom));
+  border-radius:24px 24px 0 0;
+  padding:0 24px calc(24px + env(safe-area-inset-bottom));
   max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
   box-shadow:0 -20px 60px rgba(0,0,0,.5);
   transform:translateY(100%);
   transition:transform .32s var(--ease);
 }
 .modal.open .dialog{transform:translateY(0)}
-.drag-handle{width:40px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);margin:8px auto 14px}
-.dialog h2{margin:2px 0 18px;font-size:19px;font-weight:800;letter-spacing:-.4px;color:var(--ink)}
+.drag-handle{width:40px;height:4px;border-radius:99px;background:rgba(255,255,255,.2);display:block;margin:14px auto 4px}
+.dialog h2{margin:22px 0 20px;padding-left:2px;font-size:19px;font-weight:800;letter-spacing:-.4px;color:var(--ink)}
 @media(min-width:768px){
   .modal{align-items:center;background:rgba(4,5,8,.55)}
   .dialog{
@@ -282,6 +282,7 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
   }
   .modal.open .dialog{transform:translateY(0) scale(1)}
   .drag-handle{display:none}
+  .dialog h2{margin-top:0}
 }
 .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .formgrid label{display:grid;gap:6px;color:#b5b9c4;font-size:12.5px;font-weight:600}
@@ -369,7 +370,19 @@ function rows(list,actions=false){if(!list.length)return actions?'<div class="em
 function openLightbox(id){let t=trades.find(x=>x.id===id);if(!t||!t.screenshot)return;$('lightboxImg').src=t.screenshot;$('lightbox').classList.add('open')}
 function closeLightbox(){$('lightbox').classList.remove('open')}
 function stats(){let n=trades.length,w=trades.filter(t=>t.pnl>0),l=trades.filter(t=>t.pnl<0),net=trades.reduce((a,t)=>a+t.pnl,0),gp=w.reduce((a,t)=>a+t.pnl,0),gl=Math.abs(l.reduce((a,t)=>a+t.pnl,0));return{n,w,l,net,pf:gl?gp/gl:(gp?'∞':0)}}
-function draw(){let a=[...trades].reverse(),v=0,pts=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...pts),max=Math.max(0,...pts),range=max-min||1,w=600,h=160;let p=pts.map((x,i)=>`${i*(w/(pts.length-1||1))},${h-10-(x-min)/range*(h-24)}`).join(' ');if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f5b41a" stop-opacity="0"/><stop offset="50%" stop-color="#f5b41a" stop-opacity=".9"/><stop offset="100%" stop-color="#f5b41a" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${h-10-(0-min)/range*(h-24)}" y2="${h-10-(0-min)/range*(h-24)}" stroke="rgba(255,255,255,.12)"/><polyline fill="none" stroke="${v>=0?'#22c55e':'#ef4444'}" stroke-width="3" points="${p}"/></svg>`}
+function smoothPath(pts){
+  if(pts.length<2)return '';
+  if(pts.length===2)return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
+  let d=`M${pts[0].x},${pts[0].y}`;
+  for(let i=0;i<pts.length-1;i++){
+    let p0=pts[i===0?0:i-1],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
+    let c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    let c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f5b41a" stop-opacity="0"/><stop offset="50%" stop-color="#f5b41a" stop-opacity=".9"/><stop offset="100%" stop-color="#f5b41a" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#22c55e':'#ef4444';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(255,255,255,.1)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
 function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
 function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
 function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
