@@ -259,6 +259,48 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .badge-mkt.mkt-future{background:rgba(244,114,182,.12);color:#f472b6}
 .badge-mkt.mkt-index{background:rgba(255,255,255,.08);color:var(--ink)}
 
+/* ---------- Market Monitor ---------- */
+.mm-filters{display:flex;gap:6px;padding:4px;border:1px solid var(--card-border);border-radius:99px;background:rgba(255,255,255,.02);width:fit-content;margin-bottom:18px;overflow-x:auto}
+.mm-pill{border:0;border-radius:99px;background:transparent;color:var(--muted);padding:9px 16px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .16s var(--ease),color .16s var(--ease)}
+.mm-pill:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+.mm-pill.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 10px rgba(229,184,66,.3)}
+.mm-card{background:var(--card-bg);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--card-border);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:transform .16s var(--ease),border-color .16s var(--ease),box-shadow .16s var(--ease)}
+.mm-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.12);box-shadow:0 10px 26px rgba(0,0,0,.32)}
+.mm-card:active{transform:scale(.995)}
+.mm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.mm-ticker{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.2px}
+.mm-ticker.mkt-stock{background:var(--amber-soft);color:var(--amber);box-shadow:0 0 12px rgba(229,184,66,.25)}
+.mm-ticker.mkt-futures{background:rgba(244,114,182,.12);color:#f472b6;box-shadow:0 0 12px rgba(244,114,182,.22)}
+.mm-ticker.mkt-forex{background:rgba(96,165,250,.12);color:#60a5fa;box-shadow:0 0 12px rgba(96,165,250,.22)}
+.mm-time{font-size:11.5px;color:var(--muted-2)}
+.mm-headline{font-size:14.5px;font-weight:700;line-height:1.4;margin-bottom:9px;color:var(--ink)}
+.mm-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mm-source{font-size:12px;color:var(--muted)}
+.mm-sentiment{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:99px;font-size:10.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+.mm-sentiment.bull{background:var(--pos-soft);color:var(--pos);text-shadow:0 0 10px rgba(34,197,94,.4)}
+.mm-sentiment.bear{background:var(--neg-soft);color:var(--neg);text-shadow:0 0 10px rgba(239,68,68,.35)}
+.mm-sentiment svg{flex-shrink:0}
+.mm-new{animation:mmFlash .9s var(--ease)}
+@keyframes mmFlash{0%{background:rgba(229,184,66,.14)}100%{background:transparent}}
+
+/* Desktop side panel / mobile bottom drawer for news details */
+.newsPanel{position:fixed;inset:0;z-index:25;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,5,8,.6);backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .28s var(--ease),visibility 0s linear .28s}
+.newsPanel.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .28s var(--ease),visibility 0s linear 0s}
+.newsPanel .panelBody{width:100%;max-width:640px;background:var(--card-bg-solid);border:1px solid var(--card-border);border-radius:24px 24px 0 0;padding:0 24px calc(24px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -20px 60px rgba(0,0,0,.5);transform:translateY(100%);transition:transform .32s var(--ease)}
+.newsPanel.open .panelBody{transform:translateY(0)}
+@media(min-width:860px){
+  .newsPanel{align-items:stretch;justify-content:flex-end}
+  .newsPanel .panelBody{max-width:460px;height:100%;max-height:none;border-radius:0;border-left:1px solid var(--card-border);border-top:0;transform:translateX(100%);padding:26px}
+  .newsPanel.open .panelBody{transform:translateX(0)}
+}
+.np-ticker-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:22px;margin-bottom:14px}
+@media(min-width:860px){.np-ticker-row{margin-top:0}}
+.np-headline{font-size:18px;font-weight:800;line-height:1.4;letter-spacing:-.2px;margin:0 0 8px}
+.np-meta{font-size:12px;color:var(--muted-2);margin-bottom:18px}
+.np-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin:18px 0 8px}
+.np-impact{font-size:13.5px;line-height:1.6;color:#cdd0d6;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:var(--radius-sm);padding:12px 14px}
+.mm-spark{margin-top:6px}
+
 /* ---------- Body scroll lock while a modal is open ---------- */
 body{overscroll-behavior:none}
 
@@ -355,15 +397,26 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
   nav button:after{font-size:15px}
   nav button:nth-child(1):after{content:'◫'}
   nav button:nth-child(2):after{content:'≡'}
-  nav button:nth-child(3):after{content:'⚙'}
+  nav button:nth-child(3):after{content:'◉'}
+  nav button:nth-child(4):after{content:'⚙'}
   .market-pulse{display:none}
   .trade{grid-template-columns:1fr 1fr}
   .trade .hide-mobile{display:none}
   .skeleton-row{grid-template-columns:1fr 1fr}
 }
-</style></head><body><header><div class="brand"><img src="/header-bull.png" alt="Ledger">Ledger</div><div class="market-pulse"><b>● Live</b> &nbsp; Personal trading terminal</div><nav><button class="active" onclick="show('dashboard')">Dashboard</button><button onclick="show('journal')">Journal</button><button onclick="show('settings')">Settings</button><button id="installBtn" hidden onclick="installApp()">Install</button></nav></header><main class="wrap">
+</style></head><body><header><div class="brand"><img src="/header-bull.png" alt="Ledger">Ledger</div><div class="market-pulse"><b>● Live</b> &nbsp; Personal trading terminal</div><nav><button class="active" data-tab="dashboard" onclick="show('dashboard')">Dashboard</button><button data-tab="journal" onclick="show('journal')">Journal</button><button data-tab="monitor" onclick="show('monitor')">Market Monitor</button><button data-tab="settings" onclick="show('settings')">Settings</button><button id="installBtn" hidden onclick="installApp()">Install</button></nav></header><main class="wrap">
 <section class="page active" id="dashboard"><div class="hero"><div><div class="terminal-kicker">Performance overview</div><h1>Your trading dashboard</h1><p class="muted" id="dashSub">Sign in to see your personal journal.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="grid"><div class="card"><div class="label">Net P&amp;L</div><div id="net" class="value">—</div></div><div class="card"><div class="label">Trades</div><div id="count" class="value">—</div></div><div class="card"><div class="label">Win rate</div><div id="winrate" class="value">—</div></div><div class="card"><div class="label">Profit factor</div><div id="factor" class="value">—</div></div></div><div class="card section"><div class="label">Equity curve</div><div class="chart" id="chart"></div></div><div class="card section"><div class="label">Recent trades</div><div id="recent"></div></div></section>
 <section class="page" id="journal"><div class="hero"><div><h1>Trade journal</h1><p class="muted">Search and review your saved trades.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button></div><div class="card trades"><div id="journalList"></div></div></section>
+<section class="page" id="monitor">
+<div class="hero"><div><div class="terminal-kicker">Live feed · simulated</div><h1>Market Monitor</h1><p class="muted">Headline-driven bias across stocks, futures, and forex.</p></div></div>
+<div class="mm-filters" id="mmFilters">
+  <button class="mm-pill active" data-cat="all" onclick="setMonitorFilter('all')">All Feeds</button>
+  <button class="mm-pill" data-cat="stocks" onclick="setMonitorFilter('stocks')">Stocks</button>
+  <button class="mm-pill" data-cat="futures" onclick="setMonitorFilter('futures')">Futures</button>
+  <button class="mm-pill" data-cat="forex" onclick="setMonitorFilter('forex')">Forex</button>
+</div>
+<div id="mmFeed"></div>
+</section>
 <section class="page" id="settings"><div class="settings"><div class="hero"><div><h1>Settings</h1><p class="muted">Your journal is private to your signed-in account.</p></div></div><div class="card"><div class="label">Account</div><div id="account" class="notice">Checking sign-in…</div></div><div class="card section"><div class="label">Storage</div><p class="muted">Trades are stored in a Neon Postgres database, scoped to your Google account — they persist across Render restarts, sleeps, and redeploys.</p><p class="muted">Set <code>DATABASE_URL</code> in Render to your Neon connection string to enable saving. You can also browse or edit rows directly in Neon's SQL Editor at any time.</p></div><div class="card section"><div class="label">Google login setup</div><p class="muted">Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>SESSION_SECRET</code>, and <code>APP_URL</code> in Render. In Google Cloud Console, add <code id="redirect"></code> as an authorized redirect URI.</p></div></div></section>
 </main><div class="modal" id="modal"><div class="dialog"><div class="drag-handle"></div><h2 id="formTitle">Log a trade</h2><div class="formgrid"><label>Market<select id="type"><option>stock</option><option>forex</option><option>crypto</option><option>future</option><option>index</option></select></label><label>Symbol<input id="symbol" placeholder="AAPL" maxlength="16"></label><label>Entry<input id="entry" placeholder="Price"></label><label>Exit<input id="exit" placeholder="Price"></label><label>P&amp;L<input id="pnl" type="number" step="0.01" placeholder="125.50"></label><label>R:R<input id="rr" placeholder="2.5"></label><label>Date<input id="date" type="date"></label><label>Side<select id="side"><option>Long</option><option>Short</option></select></label><label class="full">Setup<input id="setup" placeholder="Breakout"></label><label class="full">Notes<textarea id="notes" placeholder="What did you see? What will you repeat or improve?"></textarea></label><label class="full">Screenshot of the executed trade
 <div class="dropzone" id="dropzone">
@@ -374,6 +427,25 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
 </div>
 <div id="shotPreviewWrap" style="display:none;margin-top:10px"><img id="shotPreview" style="max-width:100%;max-height:220px;border-radius:10px;display:block;border:1px solid var(--card-border)"><button type="button" onclick="removeShot()" style="margin-top:8px" class="danger">Remove image</button></div></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
 <div class="modal" id="lightbox" onclick="closeLightbox()"><img id="lightboxImg" style="max-width:92vw;max-height:88vh;border-radius:14px"></div>
+<div class="newsPanel" id="newsPanel" onclick="if(event.target===this)closeNewsDetails()">
+<div class="panelBody">
+<div class="drag-handle"></div>
+<div class="np-ticker-row">
+  <span class="mm-ticker" id="npTicker">—</span>
+  <span class="mm-sentiment" id="npSentiment"></span>
+</div>
+<h2 class="np-headline" id="npHeadline">—</h2>
+<div class="np-meta" id="npMeta">—</div>
+<div id="npSentimentPill" style="margin-bottom:6px"></div>
+<div class="np-section-label">Full story</div>
+<p class="muted" id="npBody" style="line-height:1.6;font-size:13.5px">—</p>
+<div class="np-section-label">Impact analysis</div>
+<div class="np-impact" id="npImpact">—</div>
+<div class="np-section-label">5-min price reaction (simulated)</div>
+<div class="mm-spark" id="npSpark"></div>
+<div class="footer-actions"><button class="primary" onclick="closeNewsDetails()">Close</button></div>
+</div>
+</div>
 <div class="modal" id="detailsModal" onclick="if(event.target===this)closeDetails()">
 <div class="dialog">
 <div class="drag-handle"></div>
@@ -407,7 +479,7 @@ code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:
 let trades=[],me=null,editing=null,pendingShot='';const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
 async function api(url,opt={}){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');return r.json()}
 function money(x){return (x>=0?'+$':'-$')+Math.abs(x).toFixed(2)}function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.textContent.trim().toLowerCase()===id));render()}
+function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='monitor')renderMonitor();render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
 function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:40%;height:9px"></div></div><div class="hide-mobile ghost" style="width:50%"></div><div class="hide-mobile ghost" style="width:50%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
 function rows(list,fullList=false){if(!list.length)return fullList?'<div class="empty">No trades yet. Log your first trade when you are ready.</div>':skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:1px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
@@ -447,6 +519,34 @@ async function removeTrade(id){if(!confirm('Delete this trade?'))return;try{trad
 async function deleteFromDetails(){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+dtCurrentId,{method:'DELETE'})).trades;render();closeDetails()}catch(e){alert(e.message)}}
 function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
+/* ---------- Market Monitor (simulated feed) ---------- */
+const MM_HEADLINE_POOL=[
+  {headline:"Tesla Beats Q3 Delivery Estimates, Shares Surge in Pre-Market",source:"Reuters",category:"stocks",tickerDisplay:"$TSLA",body:"Tesla delivered 462,000 vehicles in the third quarter, topping Street consensus of 428,000. The beat was driven by stronger-than-expected North American demand ahead of a planned incentive expiration.",impact:"Delivery numbers beat consensus by roughly 8%, a gap that has historically correlated with a 2-4% intraday move on the announcement day."},
+  {headline:"Fed Officials Signal Openness to December Rate Cut",source:"Bloomberg",category:"forex",tickerDisplay:"EUR/USD",body:"Several Federal Reserve officials used public remarks this week to signal comfort with a further rate cut in December, citing cooling inflation data and a softening labor market.",impact:"A more dovish Fed narrows the US-Europe rate differential, which typically weighs on the dollar and lifts EUR/USD."},
+  {headline:"Gold Futures Climb as Safe-Haven Demand Builds on Geopolitical Risk",source:"MarketWatch",category:"futures",tickerDisplay:"/GC",body:"Gold futures rose for a third straight session as escalating geopolitical tensions pushed investors toward traditional safe-haven assets.",impact:"Rising geopolitical risk premiums are a classic tailwind for gold, which tends to attract inflows during periods of heightened uncertainty."},
+  {headline:"Regulatory Investigation Opened Into Meta's Data Practices",source:"Reuters",category:"stocks",tickerDisplay:"$META",body:"European regulators announced a formal investigation into Meta's handling of user data across its advertising products, with a decision expected within 12 months.",impact:"New regulatory investigations introduce legal overhang that has historically pressured large tech platform shares in the days following disclosure."},
+  {headline:"Crude Oil Slides on Surprise Inventory Surplus",source:"Bloomberg",category:"futures",tickerDisplay:"/CL",body:"US crude inventories rose by 4.2 million barrels last week, confounding analyst expectations for a modest draw and reviving oversupply concerns.",impact:"An unexpected inventory build signals softer near-term demand relative to supply, a combination that typically pressures crude prices lower."},
+  {headline:"Japanese Yen Weakens After BOJ Holds Rates Steady",source:"Nikkei",category:"forex",tickerDisplay:"USD/JPY",body:"The Bank of Japan kept its policy rate unchanged, disappointing traders positioned for a hawkish tilt following recent inflation prints.",impact:"A steady BOJ keeps Japan's yield disadvantage versus the US intact, a setup that tends to keep USD/JPY biased higher."},
+  {headline:"Nvidia Shares Jump on Strong Data Center Demand Commentary",source:"CNBC",category:"stocks",tickerDisplay:"$NVDA",body:"Nvidia executives told an industry conference that data center order backlogs remain well beyond current production capacity into next year.",impact:"Commentary pointing to durable, multi-quarter demand tends to support forward earnings estimates, a common driver of near-term share strength."},
+  {headline:"British Pound Slips on Weaker-Than-Expected UK Retail Sales",source:"Reuters",category:"forex",tickerDisplay:"GBP/USD",body:"UK retail sales fell 0.3% month-over-month, missing forecasts for a flat reading and adding to concerns about the health of the domestic consumer.",impact:"Soft consumer data raises the odds of a more dovish Bank of England path, a dynamic that has recently weighed on sterling."}
+];
+function classifySentiment(text){let bullWords=['beat','beats','surge','surges','soar','soars','jump','jumps','climb','climbs','upgrade','strong demand','record','rally','rallies'];let bearWords=['miss','misses','plunge','plunges','investigation','surplus','downgrade','recall','lawsuit','weak','slip','slips','slide','slides','falls','fall','disappoint'];let t=text.toLowerCase();let bull=bullWords.filter(w=>t.includes(w)).length;let bear=bearWords.filter(w=>t.includes(w)).length;return bull>=bear?'bullish':'bearish'}
+function mmMakeSparkline(sentiment){let pts=[100];for(let i=0;i<9;i++){let drift=sentiment==='bullish'?(Math.random()*1.1-0.15):(Math.random()*1.1-0.95);pts.push(pts[pts.length-1]+drift)}return pts}
+let mmFeed=[],mmFilter='all',mmIdSeq=0;
+function mmSeed(){let now=Date.now();mmFeed=MM_HEADLINE_POOL.map((item,i)=>{let sentiment=classifySentiment(item.headline);return Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:now-i*7*60000,spark:mmMakeSparkline(sentiment),isNew:false},item)})}
+function mmTimeAgo(ts){let s=Math.max(1,Math.floor((Date.now()-ts)/1000));if(s<60)return s+'s';let m=Math.floor(s/60);if(m<60)return m+'m';return Math.floor(m/60)+'h'}
+function mmCatClass(cat){return cat==='futures'?'mkt-futures':cat==='forex'?'mkt-forex':'mkt-stock'}
+function mmSentimentPill(sentiment){let up=sentiment==='bullish';let arrow=up?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 19l-6-6M12 19l6-6"/></svg>';let label=up?'Bullish biased (price likely UP)':'Bearish biased (price likely DOWN)';let emoji=up?'🟢':'🔴';return `<span class="mm-sentiment ${up?'bull':'bear'}">${arrow}${emoji} ${label}</span>`}
+function renderMonitor(){let list=mmFeed.filter(n=>mmFilter==='all'||n.category===mmFilter);let el=$('mmFeed');if(!list.length){el.innerHTML='<div class="empty">No headlines in this category yet.</div>';return}el.innerHTML=list.map(n=>`<div class="mm-card ${n.isNew?'mm-new':''}" onclick="openNewsDetails('${n.id}')"><div class="mm-top"><span class="mm-ticker ${mmCatClass(n.category)}">${esc(n.tickerDisplay)}</span><span class="mm-time">${mmTimeAgo(n.datetime)}</span></div><div class="mm-headline">${esc(n.headline)}</div><div class="mm-bottom"><span class="mm-source">${esc(n.source)}</span>${mmSentimentPill(n.sentiment)}</div></div>`).join('')}
+function setMonitorFilter(cat){mmFilter=cat;document.querySelectorAll('.mm-pill').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));renderMonitor()}
+function mmSparkSvg(pts,color){let w=560,h=70;let min=Math.min(...pts),max=Math.max(...pts),range=(max-min)||1;let mapped=pts.map((v,i)=>({x:i*(w/(pts.length-1)),y:h-6-(v-min)/range*(h-12)}));let d=smoothPath(mapped);return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:70px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+let mmCurrentId=null;
+function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurrentId=id;n.isNew=false;$('npTicker').textContent=n.tickerDisplay;$('npTicker').className='mm-ticker '+mmCatClass(n.category);$('npHeadline').textContent=n.headline;$('npMeta').textContent=`${n.source} · ${mmTimeAgo(n.datetime)} ago`;$('npSentimentPill').innerHTML=mmSentimentPill(n.sentiment);$('npBody').textContent=n.body;$('npImpact').textContent=n.impact;let up=n.sentiment==='bullish';$('npSpark').innerHTML=mmSparkSvg(n.spark,up?'#22c55e':'#ef4444');$('newsPanel').classList.add('open');lockScroll()}
+function closeNewsDetails(){$('newsPanel').classList.remove('open');unlockScroll()}
+function mmSimulateTick(){let monitorPage=document.getElementById('monitor');if(!monitorPage||!monitorPage.classList.contains('active'))return;let templates=[{headline:"Breaking: Apple Supplier Flags Component Shortage Ahead of Holiday Quarter",source:"Bloomberg",category:"stocks",tickerDisplay:"$AAPL",body:"A key Apple supplier warned of tightening component availability heading into the critical holiday shopping season, raising fulfillment concerns.",impact:"Supply constraints ahead of peak season can cap near-term revenue upside, a pattern that has weighed on shares in prior cycles."},{headline:"Breaking: OPEC+ Weighs Surprise Production Cut Amid Price Weakness",source:"Reuters",category:"futures",tickerDisplay:"/CL",body:"Delegates say OPEC+ members are discussing an unscheduled production cut at their next meeting in response to recent price softness.",impact:"Coordinated supply cuts from major producers are one of the more reliable near-term bullish catalysts for crude prices."},{headline:"Breaking: Swiss Franc Rallies as Safe-Haven Flows Accelerate",source:"MarketWatch",category:"forex",tickerDisplay:"USD/CHF",body:"The franc strengthened broadly as investors rotated into traditional safe-haven currencies amid renewed risk-off sentiment.",impact:"Safe-haven flows into the franc typically coincide with broader risk-off moves, pressuring USD/CHF lower."}];let t=templates[Math.floor(Math.random()*templates.length)];let sentiment=classifySentiment(t.headline);mmFeed.unshift(Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:Date.now(),spark:mmMakeSparkline(sentiment),isNew:true},t));if(mmFeed.length>40)mmFeed.pop();renderMonitor()}
+mmSeed();
+setInterval(mmSimulateTick,18000);
+
 (async()=>{let p=new URLSearchParams(location.search);let authErr=p.get('auth');if(authErr){let msg={configuration_needed:'Google sign-in is not fully configured yet (missing APP_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or SESSION_SECRET).',state_mismatch:'Sign-in session expired or the state cookie was blocked. Try again, and make sure cookies are allowed.',token_exchange_failed:'Google rejected the sign-in exchange. This usually means the redirect URI in Google Cloud does not exactly match APP_URL, or the client secret is wrong.',google_http_error:'Google returned an error during sign-in. Check Render logs for the exact response.',exception:'Something unexpected went wrong during sign-in. Check Render logs for details.'}[authErr]||('Sign-in failed: '+authErr);let el=document.createElement('div');el.className='notice';el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99;max-width:90vw;background:#3e1c1c;border:1px solid #ff91a5;color:#ffd7dd';el.textContent=msg;document.body.appendChild(el);history.replaceState({},'',location.pathname)}try{let d=await api('/api/me');me=d.user;if(me)trades=(await api('/api/trades')).trades}catch(e){}render()})();
 </script></body></html>'''
 
