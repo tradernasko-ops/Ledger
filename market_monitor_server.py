@@ -36,11 +36,11 @@ import psycopg2.extras
 from psycopg2.pool import ThreadedConnectionPool
 
 PORT = int(os.environ.get("PORT", "8000"))
-APP_URL = os.environ.get("APP_URL", "").rstrip("/")
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-SESSION_SECRET = os.environ.get("SESSION_SECRET", "")
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+APP_URL = os.environ.get("APP_URL", "").strip().rstrip("/")
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "").strip()
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 LOCK = RLock()
 MAX_BODY = 1_600_000
 
@@ -466,6 +466,20 @@ def main():
     except Exception as e:
         print(f'WARNING: could not initialize Neon database on startup: {e}', flush=True)
     print(f'Ledger v4 running on port {PORT}', flush=True)
+    print(
+        'CONFIG CHECK -- APP_URL=%r | GOOGLE_CLIENT_ID starts with %r (len %d) | '
+        'GOOGLE_CLIENT_SECRET ends with %r (len %d) | SESSION_SECRET set: %s | DATABASE_URL set: %s'
+        % (
+            APP_URL,
+            GOOGLE_CLIENT_ID[:20] if GOOGLE_CLIENT_ID else '(empty)',
+            len(GOOGLE_CLIENT_ID),
+            GOOGLE_CLIENT_SECRET[-4:] if GOOGLE_CLIENT_SECRET else '(empty)',
+            len(GOOGLE_CLIENT_SECRET),
+            bool(SESSION_SECRET),
+            bool(DATABASE_URL),
+        ),
+        flush=True,
+    )
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
 
 
