@@ -1,1 +1,1 @@
-# No external dependencies — this app only uses Python's built-in libraries.
+psycopg2-binary
