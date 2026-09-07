@@ -704,7 +704,7 @@ function exportJournalCsv() {
     t.date || '', t.type || '', t.symbol || '', (parseFloat(t.pnl) || 0).toFixed(2),
     t.pattern || '', t.entry || '', t.exit || '', t.rr || '', (t.tags || []).join('; ')
   ]);
-  const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
