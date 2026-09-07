@@ -176,16 +176,16 @@ PAGE = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 <style>
 *{box-sizing:border-box}
 :root{
-  --bg:#0b0e14;
+  --bg:#09090b;
   --card-bg:rgba(24,24,27,.55);
   --card-bg-solid:#18181b;
   --card-border:rgba(255,255,255,.06);
   --ink:#f4f4f5;
   --muted:#8b8f9a;
   --muted-2:#5b5f6b;
-  --amber:#f5b41a;
-  --amber-ink:#221703;
-  --amber-soft:rgba(245,180,26,.12);
+  --amber:#e5b842;
+  --amber-ink:#2b1f04;
+  --amber-soft:rgba(229,184,66,.12);
   --pos:#22c55e;
   --pos-soft:rgba(34,197,94,.12);
   --neg:#ef4444;
@@ -203,12 +203,12 @@ header{height:calc(64px + env(safe-area-inset-top));padding-top:env(safe-area-in
 nav{display:flex;gap:2px;padding:4px;border:1px solid var(--card-border);border-radius:12px;background:rgba(255,255,255,.02)}
 nav button{border:0;border-radius:9px;background:transparent;color:var(--muted);padding:9px 14px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .16s var(--ease),color .16s var(--ease)}
 nav button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
-nav button.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 12px rgba(245,180,26,.35)}
+nav button.active{background:var(--amber);color:var(--amber-ink);box-shadow:0 2px 12px rgba(229,184,66,.35)}
 button,.button{border:0;border-radius:var(--radius-sm);padding:11px 16px;background:rgba(255,255,255,.06);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;min-height:44px;transition:background .16s var(--ease),transform .12s var(--ease)}
 button:hover,.button:hover{background:rgba(255,255,255,.1)}
 button:active,.button:active{transform:scale(.97)}
-.primary{background:linear-gradient(135deg,#ffd166,var(--amber) 55%,#e69a0a);color:var(--amber-ink);font-weight:700;box-shadow:0 4px 20px rgba(245,180,26,.35),0 0 0 1px rgba(255,255,255,.08) inset}
-.primary:hover{background:#ffc23a;box-shadow:0 6px 26px rgba(245,180,26,.4);transform:translateY(-1px)}
+.primary{background:linear-gradient(135deg,#f3d585,var(--amber) 55%,#c99a2e);color:var(--amber-ink);font-weight:700;box-shadow:0 4px 20px rgba(229,184,66,.35),0 0 0 1px rgba(255,255,255,.08) inset}
+.primary:hover{background:#f0c65a;box-shadow:0 6px 26px rgba(229,184,66,.4);transform:translateY(-1px)}
 .danger{color:#fca5a5;background:var(--neg-soft)}
 .danger:hover{background:rgba(239,68,68,.2)}
 .muted{color:var(--muted)}
@@ -234,18 +234,33 @@ button:active,.button:active{transform:scale(.97)}
 .section>.label:after{content:"";height:1px;flex:1;background:var(--card-border)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
 .toolbar input,.toolbar select,input,select,textarea{background:rgba(255,255,255,.045);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.09);border-radius:var(--radius-sm);padding:12px 13px;color:var(--ink);font-family:inherit;font-size:16px;min-height:44px;transition:border-color .18s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
-.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft),0 0 18px rgba(245,180,26,.25);background:rgba(255,255,255,.07)}
+.toolbar input:focus,.toolbar select:focus,input:focus,select:focus,textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 4px var(--amber-soft),0 0 18px rgba(229,184,66,.25);background:rgba(255,255,255,.07)}
 textarea{width:100%;min-height:76px;resize:vertical}
 input.pnl-pos{border-color:var(--pos)!important;box-shadow:0 0 0 4px var(--pos-soft)!important}
 input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-soft)!important}
 .trades{overflow:auto}
-.trade{display:grid;grid-template-columns:1.1fr .8fr 1fr .9fr .7fr;gap:12px;align-items:center;padding:14px 6px;border-top:1px solid var(--card-border);transition:background .15s var(--ease)}
+.trade{display:grid;grid-template-columns:1.3fr .95fr .95fr 1fr .8fr;gap:14px;align-items:center;padding:16px 8px;border-top:1px solid var(--card-border);transition:background .15s var(--ease);cursor:pointer}
 .trade:first-child{border:0}
-.trade:hover{background:rgba(255,255,255,.03)}
+.trade:hover{background:rgba(255,255,255,.035)}
+.trade:active{background:rgba(255,255,255,.06)}
 .symbol{font-weight:700;letter-spacing:.1px}
-.symbol:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;box-shadow:0 0 8px rgba(245,180,26,.6)}
+.symbol:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;box-shadow:0 0 8px rgba(229,184,66,.6)}
 .trade:nth-child(odd) .symbol:before{background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,.6)}
 .empty{padding:32px 20px;text-align:center;color:var(--muted);border:1px dashed var(--card-border);border-radius:var(--radius-md);margin:6px}
+
+/* ---------- TradeZella-style micro badges ---------- */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:10.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.badge-long{background:var(--pos-soft);color:var(--pos)}
+.badge-short{background:var(--neg-soft);color:var(--neg)}
+.badge-mkt{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--card-border)}
+.badge-mkt.mkt-crypto{background:rgba(167,139,250,.12);color:#a78bfa}
+.badge-mkt.mkt-forex{background:rgba(96,165,250,.12);color:#60a5fa}
+.badge-mkt.mkt-stock{background:var(--amber-soft);color:var(--amber)}
+.badge-mkt.mkt-future{background:rgba(244,114,182,.12);color:#f472b6}
+.badge-mkt.mkt-index{background:rgba(255,255,255,.08);color:var(--ink)}
+
+/* ---------- Body scroll lock while a modal is open ---------- */
+body{overscroll-behavior:none}
 
 /* ---------- Modal: mobile bottom-sheet / desktop centered ---------- */
 .modal{
@@ -289,10 +304,10 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 4px var(--neg-s
 .full{grid-column:1/-1}
 .settings{max-width:700px}
 .account{display:flex;align-items:center;gap:15px}
-.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffc23a,var(--amber));color:var(--amber-ink);display:grid;place-items:center;font-weight:800}
-.notice{padding:14px;border-radius:var(--radius-md);background:rgba(245,180,26,.08);border:1px solid var(--amber-soft);color:#e8c878;margin:14px 0;font-size:13.5px;line-height:1.5}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#f0c65a,var(--amber));color:var(--amber-ink);display:grid;place-items:center;font-weight:800}
+.notice{padding:14px;border-radius:var(--radius-md);background:rgba(229,184,66,.08);border:1px solid var(--amber-soft);color:#e8d29a;margin:14px 0;font-size:13.5px;line-height:1.5}
 .footer-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
-code{color:#f5c65a;background:rgba(245,180,26,.1);padding:2px 6px;border-radius:5px;font-size:.9em}
+code{color:#f0d488;background:rgba(229,184,66,.1);padding:2px 6px;border-radius:5px;font-size:.9em}
 .market-pulse{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .market-pulse:before{content:"";width:7px;height:7px;border-radius:99px;background:var(--pos);box-shadow:0 0 0 4px var(--pos-soft)}
 .market-pulse b{color:var(--pos);font-weight:800}
@@ -359,16 +374,51 @@ code{color:#f5c65a;background:rgba(245,180,26,.1);padding:2px 6px;border-radius:
 </div>
 <div id="shotPreviewWrap" style="display:none;margin-top:10px"><img id="shotPreview" style="max-width:100%;max-height:220px;border-radius:10px;display:block;border:1px solid var(--card-border)"><button type="button" onclick="removeShot()" style="margin-top:8px" class="danger">Remove image</button></div></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
 <div class="modal" id="lightbox" onclick="closeLightbox()"><img id="lightboxImg" style="max-width:92vw;max-height:88vh;border-radius:14px"></div>
+<div class="modal" id="detailsModal" onclick="if(event.target===this)closeDetails()">
+<div class="dialog">
+<div class="drag-handle"></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-top:22px">
+  <div><h2 id="dtSymbol" style="margin:0">—</h2><div class="muted" id="dtDate" style="font-size:13px;margin-top:3px">—</div></div>
+  <div id="dtPnl" class="value" style="font-size:22px;white-space:nowrap">—</div>
+</div>
+<div id="dtBadges" style="display:flex;gap:8px;margin:14px 0 20px"></div>
+<div class="formgrid" style="margin-bottom:8px">
+  <div><div class="label">Entry</div><div id="dtEntry" style="font-weight:700;margin-top:5px">—</div></div>
+  <div><div class="label">Exit</div><div id="dtExit" style="font-weight:700;margin-top:5px">—</div></div>
+  <div><div class="label">Risk : Reward</div><div id="dtRR" style="font-weight:700;margin-top:5px">—</div></div>
+  <div><div class="label">Setup</div><div id="dtSetup" style="font-weight:700;margin-top:5px">—</div></div>
+</div>
+<div class="section">
+  <div class="label">Notes</div>
+  <p id="dtNotes" class="muted" style="margin-top:8px;line-height:1.6;font-size:13.5px">—</p>
+</div>
+<div id="dtShotWrap" style="display:none" class="section">
+  <div class="label">Screenshot</div>
+  <img id="dtShot" style="width:100%;border-radius:14px;margin-top:10px;cursor:zoom-in;border:1px solid var(--card-border);display:block" onclick="openLightbox(dtCurrentId)">
+</div>
+<div class="footer-actions">
+  <button class="danger" onclick="deleteFromDetails()">Delete</button>
+  <button onclick="closeDetails();editTrade(dtCurrentId)">Edit</button>
+  <button class="primary" onclick="closeDetails()">Close</button>
+</div>
+</div>
+</div>
 <script>
 let trades=[],me=null,editing=null,pendingShot='';const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
 async function api(url,opt={}){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');return r.json()}
 function money(x){return (x>=0?'+$':'-$')+Math.abs(x).toFixed(2)}function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.textContent.trim().toLowerCase()===id));render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
-function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:45%;height:9px"></div></div><div class="hide-mobile ghost" style="width:60%"></div><div class="hide-mobile ghost" style="width:70%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
-function rows(list,actions=false){if(!list.length)return actions?'<div class="empty">No trades yet. Log your first trade when you are ready.</div>':skeletonRows(3);return list.map(t=>`<div class="trade"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" onclick="openLightbox('${t.id}')" style="width:22px;height:22px;object-fit:cover;border-radius:5px;vertical-align:middle;cursor:pointer;margin-left:7px;border:1px solid #2a3c62">`:''}</div><div class="muted">${esc(t.date)} · ${esc(t.side||'')}</div></div><div class="hide-mobile">${esc(t.type)}</div><div class="hide-mobile">${esc(t.setup||'—')}</div><div class="${t.pnl>0?'pos':t.pnl<0?'neg':''}">${money(t.pnl)}</div><div>${actions?`<button onclick="editTrade('${t.id}')">Edit</button> <button class="danger" onclick="removeTrade('${t.id}')">Delete</button>`:''}</div></div>`).join('')}
-function openLightbox(id){let t=trades.find(x=>x.id===id);if(!t||!t.screenshot)return;$('lightboxImg').src=t.screenshot;$('lightbox').classList.add('open')}
-function closeLightbox(){$('lightbox').classList.remove('open')}
+function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:40%;height:9px"></div></div><div class="hide-mobile ghost" style="width:50%"></div><div class="hide-mobile ghost" style="width:50%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
+function rows(list,fullList=false){if(!list.length)return fullList?'<div class="empty">No trades yet. Log your first trade when you are ready.</div>':skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:1px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
+let dtCurrentId=null;
+function openTradeDetails(id){let t=trades.find(x=>x.id===id);if(!t)return;dtCurrentId=id;$('dtSymbol').textContent=t.symbol;$('dtDate').textContent=t.date||'';let pnlEl=$('dtPnl');pnlEl.textContent=money(t.pnl);pnlEl.className='value '+(t.pnl>0?'pos':t.pnl<0?'neg':'');let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';$('dtBadges').innerHTML=`<span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span><span class="badge ${sideClass}">${esc(t.side||'Long')}</span>`;$('dtEntry').textContent=t.entry||'—';$('dtExit').textContent=t.exit||'—';$('dtRR').textContent=t.rr||'—';$('dtSetup').textContent=t.setup||'—';$('dtNotes').textContent=t.notes||'No notes added.';if(t.screenshot){$('dtShot').src=t.screenshot;$('dtShotWrap').style.display='block'}else{$('dtShotWrap').style.display='none'}$('detailsModal').classList.add('open');lockScroll()}
+function closeDetails(){$('detailsModal').classList.remove('open');unlockScroll()}
+let scrollLockY=0,scrollLockDepth=0;
+function lockScroll(){if(scrollLockDepth++>0)return;scrollLockY=window.scrollY;document.body.style.position='fixed';document.body.style.top=(-scrollLockY)+'px';document.body.style.left='0';document.body.style.right='0';document.body.style.width='100%'}
+function unlockScroll(){if(--scrollLockDepth>0)return;scrollLockDepth=0;document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';document.body.style.width='';window.scrollTo(0,scrollLockY)}
+function openLightbox(id){let t=trades.find(x=>x.id===id);if(!t||!t.screenshot)return;$('lightboxImg').src=t.screenshot;$('lightbox').classList.add('open');lockScroll()}
+function closeLightbox(){$('lightbox').classList.remove('open');unlockScroll()}
 function stats(){let n=trades.length,w=trades.filter(t=>t.pnl>0),l=trades.filter(t=>t.pnl<0),net=trades.reduce((a,t)=>a+t.pnl,0),gp=w.reduce((a,t)=>a+t.pnl,0),gl=Math.abs(l.reduce((a,t)=>a+t.pnl,0));return{n,w,l,net,pf:gl?gp/gl:(gp?'∞':0)}}
 function smoothPath(pts){
   if(pts.length<2)return '';
@@ -382,7 +432,7 @@ function smoothPath(pts){
   }
   return d;
 }
-function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f5b41a" stop-opacity="0"/><stop offset="50%" stop-color="#f5b41a" stop-opacity=".9"/><stop offset="100%" stop-color="#f5b41a" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#22c55e':'#ef4444';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(255,255,255,.1)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
+function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e5b842" stop-opacity="0"/><stop offset="50%" stop-color="#e5b842" stop-opacity=".9"/><stop offset="100%" stop-color="#e5b842" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#22c55e':'#ef4444';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(255,255,255,.1)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
 function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
 function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
 function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
@@ -390,10 +440,11 @@ $('shotFile').addEventListener('change',function(e){handleShotFile(e.target.file
 function handleShotFile(file){if(!file)return;let reader=new FileReader();reader.onload=function(ev){let img=new Image();img.onload=function(){let maxW=900,scale=Math.min(1,maxW/img.width);let canvas=document.createElement('canvas');canvas.width=img.width*scale;canvas.height=img.height*scale;let ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);pendingShot=canvas.toDataURL('image/jpeg',0.72);setShotPreview(pendingShot)};img.src=ev.target.result};reader.readAsDataURL(file)}
 (function(){let dz=$('dropzone');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>{let f=e.dataTransfer.files[0];if(f)handleShotFile(f)})})();
 $('pnl').addEventListener('input',function(){let v=parseFloat(this.value);this.classList.remove('pnl-pos','pnl-neg');if(!isNaN(v)&&v>0)this.classList.add('pnl-pos');else if(!isNaN(v)&&v<0)this.classList.add('pnl-neg')});
-function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('pnl').classList.remove('pnl-pos','pnl-neg');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('shotFile').value='';pendingShot='';setShotPreview('');$('modal').classList.add('open')};function closeTrade(){$('modal').classList.remove('open')}
-function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes'])$(k).value=t[k]??'';$('pnl').classList.remove('pnl-pos','pnl-neg');if(t.pnl>0)$('pnl').classList.add('pnl-pos');else if(t.pnl<0)$('pnl').classList.add('pnl-neg');$('shotFile').value='';pendingShot=t.screenshot||'';setShotPreview(pendingShot);$('modal').classList.add('open')}
+function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('pnl').classList.remove('pnl-pos','pnl-neg');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('shotFile').value='';pendingShot='';setShotPreview('');$('modal').classList.add('open');lockScroll()};function closeTrade(){$('modal').classList.remove('open');unlockScroll()}
+function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes'])$(k).value=t[k]??'';$('pnl').classList.remove('pnl-pos','pnl-neg');if(t.pnl>0)$('pnl').classList.add('pnl-pos');else if(t.pnl<0)$('pnl').classList.add('pnl-neg');$('shotFile').value='';pendingShot=t.screenshot||'';setShotPreview(pendingShot);$('modal').classList.add('open');lockScroll()}
 async function saveTrade(){let x={date:$('date').value,type:$('type').value,symbol:$('symbol').value,pnl:$('pnl').value,setup:$('setup').value,side:$('side').value,entry:$('entry').value,exit:$('exit').value,rr:$('rr').value,notes:$('notes').value,screenshot:pendingShot};if(!x.symbol.trim())return $('formMsg').textContent='Please enter a symbol.';try{let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});trades=d.trades;closeTrade();render()}catch(e){$('formMsg').textContent=e.message}}
 async function removeTrade(id){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+id,{method:'DELETE'})).trades;render()}catch(e){alert(e.message)}}
+async function deleteFromDetails(){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+dtCurrentId,{method:'DELETE'})).trades;render();closeDetails()}catch(e){alert(e.message)}}
 function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
 (async()=>{let p=new URLSearchParams(location.search);let authErr=p.get('auth');if(authErr){let msg={configuration_needed:'Google sign-in is not fully configured yet (missing APP_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or SESSION_SECRET).',state_mismatch:'Sign-in session expired or the state cookie was blocked. Try again, and make sure cookies are allowed.',token_exchange_failed:'Google rejected the sign-in exchange. This usually means the redirect URI in Google Cloud does not exactly match APP_URL, or the client secret is wrong.',google_http_error:'Google returned an error during sign-in. Check Render logs for the exact response.',exception:'Something unexpected went wrong during sign-in. Check Render logs for details.'}[authErr]||('Sign-in failed: '+authErr);let el=document.createElement('div');el.className='notice';el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99;max-width:90vw;background:#3e1c1c;border:1px solid #ff91a5;color:#ffd7dd';el.textContent=msg;document.body.appendChild(el);history.replaceState({},'',location.pathname)}try{let d=await api('/api/me');me=d.user;if(me)trades=(await api('/api/trades')).trades}catch(e){}render()})();
