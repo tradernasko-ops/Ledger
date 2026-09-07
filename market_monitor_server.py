@@ -18,10 +18,18 @@ redirect URI on the OAuth client.
 You can inspect or edit trades directly any time from the Neon dashboard's
 SQL Editor (Tables -> trades), independent of what Render is doing.
 """
-import base64, hashlib, hmac, json, os, secrets, time, urllib.error, urllib.parse, urllib.request, uuid
+import base64, hashlib, hmac, json, os, secrets, sys, time, urllib.error, urllib.parse, urllib.request, uuid
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import RLock
+
+# Render captures stdout through a pipe, not a terminal, so Python's default
+# buffering can silently hold log lines back indefinitely on a long-running
+# server. Force line buffering so every print() shows up immediately.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 import psycopg2
 import psycopg2.extras
@@ -50,7 +58,7 @@ def get_pool():
 
 def init_db():
     if not DATABASE_URL:
-        print("WARNING: DATABASE_URL not set - trades will fail to save. Add your Neon connection string in Render's environment variables.")
+        print("WARNING: DATABASE_URL not set - trades will fail to save. Add your Neon connection string in Render's environment variables.", flush=True)
         return
     pool = get_pool()
     conn = pool.getconn()
@@ -77,7 +85,7 @@ def init_db():
             )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_trades_user_email ON trades (user_email)")
         conn.commit()
-        print("Neon database ready: trades table checked/created.")
+        print("Neon database ready: trades table checked/created.", flush=True)
     finally:
         pool.putconn(conn)
 
@@ -362,10 +370,10 @@ class Handler(BaseHTTPRequestHandler):
             state = q.get('state', [''])[0]
             if not state or state != cookie_value(self.headers, 'google_state'):
                 print('OAuth callback: state mismatch or missing. Got state=%r, cookie=%r' % (
-                    state, cookie_value(self.headers, 'google_state')))
+                    state, cookie_value(self.headers, 'google_state')), flush=True)
                 return self.redirect('/?auth=state_mismatch')
             if not q.get('code'):
-                print('OAuth callback: no code in query string. Full query: %r' % q)
+                print('OAuth callback: no code in query string. Full query: %r' % q, flush=True)
                 err = q.get('error', ['no_code'])[0]
                 return self.redirect('/?auth=' + urllib.parse.quote(err))
             try:
@@ -380,7 +388,7 @@ class Handler(BaseHTTPRequestHandler):
                     ), timeout=10
                 ).read())
                 if 'access_token' not in token:
-                    print('OAuth callback: token exchange failed, response: %r' % token)
+                    print('OAuth callback: token exchange failed, response: %r' % token, flush=True)
                     return self.redirect('/?auth=token_exchange_failed')
                 info = json.loads(urllib.request.urlopen(
                     urllib.request.Request(
@@ -389,7 +397,7 @@ class Handler(BaseHTTPRequestHandler):
                     ), timeout=10
                 ).read())
                 if not info.get('email_verified'):
-                    print('OAuth callback: email not verified, userinfo: %r' % info)
+                    print('OAuth callback: email not verified, userinfo: %r' % info, flush=True)
                     raise ValueError('Google email not verified')
                 u = {'email': info['email'], 'name': info.get('name') or info['email'].split('@')[0]}
                 return self.redirect(
@@ -397,10 +405,10 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except urllib.error.HTTPError as e:
                 body = e.read().decode(errors='replace')
-                print('OAuth callback: HTTPError from Google: %s %s -- body: %s' % (e.code, e.reason, body))
+                print('OAuth callback: HTTPError from Google: %s %s -- body: %s' % (e.code, e.reason, body), flush=True)
                 return self.redirect('/?auth=google_http_error')
             except Exception as e:
-                print('OAuth callback: unexpected exception: %r' % e)
+                print('OAuth callback: unexpected exception: %r' % e, flush=True)
                 return self.redirect('/?auth=exception')
         if path == '/auth/logout':
             return self.redirect('/', 'ledger_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0')
@@ -452,12 +460,12 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     if not SESSION_SECRET:
-        print('WARNING: Set SESSION_SECRET before enabling login.')
+        print('WARNING: Set SESSION_SECRET before enabling login.', flush=True)
     try:
         init_db()
     except Exception as e:
-        print(f'WARNING: could not initialize Neon database on startup: {e}')
-    print(f'Ledger v4 running on port {PORT}')
+        print(f'WARNING: could not initialize Neon database on startup: {e}', flush=True)
+    print(f'Ledger v4 running on port {PORT}', flush=True)
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
 
 
