@@ -54,16 +54,29 @@ NEWS_POLL_SECONDS = 60
 # (regex keyword matching), not real sentiment analysis or financial advice -
 # it just flags headlines containing common bullish/bearish trigger phrases.
 _BULLISH_PATTERNS = [
-    r"surpasse?s?\s+expectation", r"beats?\s+estimate", r"hikes?\s+dividend",
+    r"surpasse?s?\s+expectation", r"beats?\s+(?:estimate|forecast|expectation)", r"hikes?\s+dividend",
     r"\bsurge[sd]?\b", r"\brally(?:ing|ies)?\b", r"\bupgrade[sd]?\b",
     r"record\s+(?:profit|revenue|high)s?", r"\bsoar[sd]?\b", r"strong\s+demand",
-    r"\bjump[sd]?\b", r"\bclimb[sd]?\b", r"raises?\s+guidance", r"\bbullish\b",
+    r"\bjump[sd]?\b", r"\bclimb[sd]?\b", r"raises?\s+(?:guidance|outlook|forecast)", r"\bbullish\b",
+    r"\brise[sn]?\b", r"\bgain[sed]*\b", r"\badvance[sd]?\b", r"\bboost[sed]*\b", r"\bhigher\b",
+    r"\brebound[sed]*\b", r"\brecover[sy]*\b", r"\bstrengthen[sed]*\b", r"\boutperform[sed]*\b",
+    r"\bexpand[sed]*\b", r"\bgrowth\b", r"\bbeat[s]?\b", r"exceed[sed]*", r"\btop[s]?\s+(?:estimate|forecast)",
+    r"all-time\s+high", r"\bupbeat\b", r"\boptimis(?:m|tic)\b", r"cuts?\s+rates?", r"rate\s+cut",
+    r"stimulus", r"\brecord[s]?\b.{0,15}(?:high|profit|revenue|quarter)", r"\bwin[s]?\b.{0,15}(?:contract|deal|approval)",
+    r"\bapprov(?:al|ed|es)\b", r"\bpartnership\b", r"\bacquisition\b(?!.{0,20}investigat)",
 ]
 _BEARISH_PATTERNS = [
-    r"misses?\s+estimate", r"\binvestigation\b", r"\bprobe[sd]?\b", r"\bplunge[sd]?\b",
+    r"misses?\s+(?:estimate|forecast|expectation)", r"\binvestigation\b", r"\bprobe[sd]?\b", r"\bplunge[sd]?\b",
     r"\bdowngrade[sd]?\b", r"\blawsuit\b", r"\brecall(?:s|ed)?\b",
-    r"\bslump[sd]?\b", r"\bslide[sd]?\b", r"cuts?\s+guidance", r"\bwarns?\b",
+    r"\bslump[sd]?\b", r"\bslide[sd]?\b", r"cuts?\s+(?:guidance|outlook|forecast)", r"\bwarns?\b",
     r"\bfalls?\b", r"\bdrop(?:s|ped)?\b", r"\bbearish\b",
+    r"\bplung(?:e|ing)\b", r"\btumbl(?:e|ing|ed)\b", r"\bsink[s]?\b", r"\bsank\b", r"\bloss(?:es)?\b",
+    r"\bweak(?:en[s]?|ened|ness)?\b", r"\bdeclin(?:e|ing|ed|es)\b", r"\bcontract(?:ion|s|ed)?\b", r"\bshortfall\b",
+    r"\blower\b", r"\bworse[n]?\b",
+    r"\blayoff[s]?\b", r"\bcut[s]?\s+jobs\b", r"\bstrike[s]?\b", r"\bdefault[s]?\b", r"\bbankrupt(?:cy)?\b",
+    r"\bcrash(?:es|ed)?\b", r"sell[- ]off", r"\bslash(?:es|ed)?\b", r"\brecession\b", r"\binflation\s+(?:concern|fear|rise)",
+    r"rate\s+hike", r"hikes?\s+rates?", r"\bpessimis(?:m|tic)\b", r"\bconcern[s]?\b.{0,15}(?:over|about)",
+    r"\bfraud\b", r"\bscandal\b", r"\bsanction[s]?\b", r"\btariff[s]?\b", r"\bdispute[s]?\b",
 ]
 _BULLISH_RE = re.compile("|".join(_BULLISH_PATTERNS), re.IGNORECASE)
 _BEARISH_RE = re.compile("|".join(_BEARISH_PATTERNS), re.IGNORECASE)
@@ -136,10 +149,12 @@ def news_poll_loop():
     while True:
         try:
             fresh = fetch_finnhub_news()
+            with NEWS_LOCK:
+                NEWS_CACHE = fresh
             if fresh:
-                with NEWS_LOCK:
-                    NEWS_CACHE = fresh
                 print(f"News cache refreshed: {len(fresh)} items", flush=True)
+            else:
+                print("News poll ran but zero headlines matched the bullish/bearish filter this cycle.", flush=True)
         except Exception as e:
             print(f"News fetch error: {e}", flush=True)
         time.sleep(NEWS_POLL_SECONDS)
