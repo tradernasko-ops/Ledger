@@ -19,6 +19,7 @@ You can inspect or edit trades directly any time from the Neon dashboard's
 SQL Editor (Tables -> trades), independent of what Render is doing.
 """
 import base64, hashlib, hmac, json, os, re, secrets, sys, time, urllib.error, urllib.parse, urllib.request, uuid
+from datetime import date, timedelta
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import RLock, Thread
@@ -142,6 +143,54 @@ def news_poll_loop():
         except Exception as e:
             print(f"News fetch error: {e}", flush=True)
         time.sleep(NEWS_POLL_SECONDS)
+
+
+# ---------- Live earnings calendar: Finnhub integration ----------
+EARNINGS_LOCK = RLock()
+EARNINGS_CACHE = []
+EARNINGS_POLL_SECONDS = 3600  # earnings dates barely change minute to minute - hourly is plenty
+
+
+def fetch_earnings_calendar():
+    if not FINNHUB_API_KEY:
+        return []
+    today = date.today()
+    to_date = today + timedelta(days=14)
+    url = (
+        "https://finnhub.io/api/v1/calendar/earnings?from=" + today.isoformat()
+        + "&to=" + to_date.isoformat() + "&token=" + urllib.parse.quote(FINNHUB_API_KEY)
+    )
+    req = urllib.request.Request(url, headers={"User-Agent": "Ledger/1.0"})
+    with urllib.request.urlopen(req, timeout=12) as resp:
+        raw = json.loads(resp.read().decode())
+    out = []
+    for item in raw.get("earningsCalendar", []):
+        symbol = str(item.get("symbol", "")).strip().upper()
+        edate = str(item.get("date", "")).strip()
+        if not symbol or not edate:
+            continue
+        out.append({
+            "symbol": symbol,
+            "date": edate,
+            "hour": str(item.get("hour", "")),  # 'bmo' before market open, 'amc' after close, 'dmh' during hours
+            "epsEstimate": item.get("epsEstimate"),
+            "revenueEstimate": item.get("revenueEstimate"),
+        })
+    out.sort(key=lambda x: x["date"])
+    return out
+
+
+def earnings_poll_loop():
+    global EARNINGS_CACHE
+    while True:
+        try:
+            fresh = fetch_earnings_calendar()
+            with EARNINGS_LOCK:
+                EARNINGS_CACHE = fresh
+            print(f"Earnings cache refreshed: {len(fresh)} items", flush=True)
+        except Exception as e:
+            print(f"Earnings fetch error: {e}", flush=True)
+        time.sleep(EARNINGS_POLL_SECONDS)
 
 MAX_BODY = 1_600_000
 
@@ -410,7 +459,7 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 3px var(--neg-s
 .account{display:flex;align-items:center;gap:var(--sp-4)}
 .avatar{width:42px;height:42px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
 .notice{padding:var(--sp-3);border-radius:var(--radius-md);background:var(--accent-soft);border:1px solid var(--accent-soft);color:#d9c592;margin:var(--sp-3) 0;font-size:13px;line-height:1.6}
-.footer-actions{display:flex;justify-content:flex-end;gap:var(--sp-2);margin-top:var(--sp-5)}
+.footer-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-5)}
 code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-radius:5px;font-size:.9em}
 
 /* ---------- Terminal kicker ---------- */
@@ -435,6 +484,21 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 .dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 
 /* ---------- Skeleton loading ---------- */
+/* ---------- Journal calendar heatmap ---------- */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)}
+.cal-nav button{background:rgba(255,255,255,.05);min-height:36px;padding:6px 14px;font-size:15px}
+.cal-month-label{font-weight:700;font-size:14px}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.cal-weekdays span{text-align:center;font-size:10px;font-weight:700;color:var(--muted-2);text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{aspect-ratio:1;border-radius:8px;border:1px solid var(--card-border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:rgba(255,255,255,.02);padding:2px}
+.cal-cell.cal-empty{border:0;background:transparent}
+.cal-cell.cal-pos{background:rgba(62,207,142,calc(.08 + var(--intensity,0) * .38));border-color:rgba(62,207,142,calc(.2 + var(--intensity,0) * .5))}
+.cal-cell.cal-neg{background:rgba(242,102,94,calc(.08 + var(--intensity,0) * .38));border-color:rgba(242,102,94,calc(.2 + var(--intensity,0) * .5))}
+.cal-day{font-size:10.5px;color:var(--muted);font-weight:600}
+.cal-amt{font-size:9px;font-weight:700;color:var(--ink)}
+@media(max-width:700px){.cal-amt{display:none}}
+
 .skeleton-row{display:grid;grid-template-columns:1.3fr .95fr .95fr 1fr .8fr;gap:var(--sp-3);align-items:center;padding:var(--sp-3) var(--sp-2);position:relative}
 .skeleton-row:before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--card-border)}
 .skeleton-row:first-child:before{display:none}
@@ -462,6 +526,13 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 .mm-sentiment.bear{background:var(--neg-soft);color:var(--neg)}
 .mm-sentiment svg{flex-shrink:0}
 .mm-new{animation:mmFlash .8s var(--ease)}
+.earn-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 6px;position:relative}
+.earn-row:before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--card-border)}
+.earn-row:first-child:before{display:none}
+.earn-sym{font-weight:700;display:flex;align-items:center;gap:8px;font-size:13.5px}
+.earn-mine{background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:.3px}
+.earn-date{font-size:12px;color:var(--muted);text-align:right}
+.earn-hour{font-size:10px;color:var(--muted-2);text-transform:uppercase;text-align:right}
 @keyframes mmFlash{0%{background:var(--accent-soft)}100%{background:transparent}}
 #alertsToggleBtn.alerts-on{background:var(--pos-soft);color:var(--pos)}
 
@@ -519,9 +590,31 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 <div class="mesh-bg" aria-hidden="true"><span class="mesh-blob b1"></span><span class="mesh-blob b2"></span><span class="mesh-blob b3"></span></div>
 <header><div class="brand"><img src="/header-bull.png" alt="Ledger">Ledger</div><div class="market-pulse"><b>● Live</b> &nbsp; Personal trading terminal</div><nav><button class="active" data-tab="dashboard" onclick="show('dashboard')">Dashboard</button><button data-tab="journal" onclick="show('journal')">Journal</button><button data-tab="monitor" onclick="show('monitor')">Market Monitor</button><button data-tab="screener" onclick="show('screener')">Screener</button><button data-tab="settings" onclick="show('settings')">Settings</button><button id="installBtn" hidden onclick="installApp()">Install</button></nav></header><main class="wrap">
 <section class="page active" id="dashboard"><div class="hero"><div><div class="terminal-kicker">Performance overview</div><h1>Your trading dashboard</h1><p class="muted" id="dashSub">Sign in to see your personal journal.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="grid"><div class="card"><div class="label">Net P&amp;L</div><div id="net" class="value">—</div></div><div class="card"><div class="label">Trades</div><div id="count" class="value">—</div></div><div class="card"><div class="label">Win rate</div><div id="winrate" class="value">—</div></div><div class="card"><div class="label">Profit factor</div><div id="factor" class="value">—</div></div></div><div class="card section"><div class="label">Equity curve</div><div class="chart" id="chart"></div></div><div class="card section"><div class="label">Recent trades</div><div id="recent"></div></div></section>
-<section class="page" id="journal"><div class="hero"><div><h1>Trade journal</h1><p class="muted">Search and review your saved trades.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div><div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button></div><div class="card trades"><div id="journalList"></div></div></section>
+<section class="page" id="journal"><div class="hero"><div><h1>Trade journal</h1><p class="muted">Search and review your saved trades.</p></div><button class="primary" onclick="openTrade()">+ Log trade</button></div>
+<div class="mm-filters" id="journalViewToggle">
+  <button class="mm-pill active jv-pill" data-view="list" onclick="setJournalView('list')">List</button>
+  <button class="mm-pill jv-pill" data-view="calendar" onclick="setJournalView('calendar')">Calendar</button>
+</div>
+<div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button><button onclick="triggerCsvImport()">Import CSV</button><input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)"></div>
+<div class="card trades" id="journalListWrap"><div id="journalList"></div></div>
+<div id="journalCalendarWrap" style="display:none">
+  <div class="card">
+    <div class="cal-nav"><button onclick="calShift(-1)">‹</button><div id="calMonthLabel" class="cal-month-label"></div><button onclick="calShift(1)">›</button></div>
+    <div class="cal-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+<div class="section">
+  <div class="label">Performance by setup</div>
+  <div class="card" style="margin-top:10px"><div id="setupBreakdown"></div></div>
+</div>
+</section>
 <section class="page" id="monitor">
-<div class="hero"><div><div class="terminal-kicker">Live feed · simulated</div><h1>Market Monitor</h1><p class="muted">Headline-driven bias across stocks, futures, and forex.</p></div><button class="button" id="alertsToggleBtn" onclick="toggleBreakingAlerts()">🔔 Enable Breaking Alerts</button></div>
+<div class="hero"><div><div class="terminal-kicker">Live feed · Finnhub</div><h1>Market Monitor</h1><p class="muted">Headline-driven bias across stocks, futures, and forex.</p></div><button class="button" id="alertsToggleBtn" onclick="toggleBreakingAlerts()">🔔 Enable Breaking Alerts</button></div>
+<div class="section" id="earningsSection" style="margin-top:0;margin-bottom:var(--sp-5)">
+  <div class="label">Upcoming earnings</div>
+  <div class="card" style="margin-top:10px"><div id="earningsList"></div></div>
+</div>
 <div class="mm-filters" id="mmFilters">
   <button class="mm-pill active" data-cat="all" onclick="setMonitorFilter('all')">All Feeds</button>
   <button class="mm-pill" data-cat="stocks" onclick="setMonitorFilter('stocks')">Stocks</button>
@@ -552,7 +645,19 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
   </div>
 </div>
 </section>
-<section class="page" id="settings"><div class="settings"><div class="hero"><div><h1>Settings</h1><p class="muted">Your journal is private to your signed-in account.</p></div></div><div class="card"><div class="label">Account</div><div id="account" class="notice">Checking sign-in…</div></div><div class="card section"><div class="label">Storage</div><p class="muted">Trades are stored in a Neon Postgres database, scoped to your Google account — they persist across Render restarts, sleeps, and redeploys.</p><p class="muted">Set <code>DATABASE_URL</code> in Render to your Neon connection string to enable saving. You can also browse or edit rows directly in Neon's SQL Editor at any time.</p></div><div class="card section"><div class="label">Google login setup</div><p class="muted">Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>SESSION_SECRET</code>, and <code>APP_URL</code> in Render. In Google Cloud Console, add <code id="redirect"></code> as an authorized redirect URI.</p></div></div></section>
+<section class="page" id="settings"><div class="settings"><div class="hero"><div><h1>Settings</h1><p class="muted">Your journal is private to your signed-in account.</p></div></div><div class="card"><div class="label">Account</div><div id="account" class="notice">Checking sign-in…</div></div>
+<div class="card section">
+  <div class="label">Position size calculator</div>
+  <p class="muted">Figure out how many shares/units to trade based on your account size and risk tolerance.</p>
+  <div class="formgrid" style="margin-top:10px">
+    <label>Account size ($)<input id="calcAccount" type="number" step="any" placeholder="10000"></label>
+    <label>Risk per trade (%)<input id="calcRiskPct" type="number" step="any" placeholder="1"></label>
+    <label>Entry price<input id="calcEntry" type="number" step="any" placeholder="100.00"></label>
+    <label>Stop loss price<input id="calcStop" type="number" step="any" placeholder="98.00"></label>
+  </div>
+  <button class="primary" style="margin-top:14px" onclick="runRiskCalc()">Calculate</button>
+  <div id="calcResult" class="notice" style="display:none;margin-top:14px;line-height:1.7"></div>
+</div><div class="card section"><div class="label">Storage</div><p class="muted">Trades are stored in a Neon Postgres database, scoped to your Google account — they persist across Render restarts, sleeps, and redeploys.</p><p class="muted">Set <code>DATABASE_URL</code> in Render to your Neon connection string to enable saving. You can also browse or edit rows directly in Neon's SQL Editor at any time.</p></div><div class="card section"><div class="label">Google login setup</div><p class="muted">Set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, <code>SESSION_SECRET</code>, and <code>APP_URL</code> in Render. In Google Cloud Console, add <code id="redirect"></code> as an authorized redirect URI.</p></div></div></section>
 </main><div class="modal" id="modal"><div class="dialog"><div class="drag-handle"></div><h2 id="formTitle">Log a trade</h2><div class="formgrid"><label>Market<select id="type"><option>stock</option><option>forex</option><option>crypto</option><option>future</option><option>index</option></select></label><label>Symbol<input id="symbol" placeholder="AAPL" maxlength="16"></label><label>Entry<input id="entry" placeholder="Price"></label><label>Exit<input id="exit" placeholder="Price"></label><label>P&amp;L<input id="pnl" type="number" step="0.01" placeholder="125.50"></label><label>R:R<input id="rr" placeholder="2.5"></label><label>Date<input id="date" type="date"></label><label>Side<select id="side"><option>Long</option><option>Short</option></select></label><label class="full">Setup<input id="setup" placeholder="Breakout"></label><label class="full">Notes<textarea id="notes" placeholder="What did you see? What will you repeat or improve?"></textarea></label><label class="full">Screenshot of the executed trade
 <div class="dropzone" id="dropzone">
 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
@@ -605,6 +710,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 </div>
 <div class="footer-actions">
   <button class="danger" onclick="deleteFromDetails()">Delete</button>
+  <button onclick="shareTradeCard()">Share</button>
   <button onclick="viewChartForTrade()">View Chart</button>
   <button onclick="closeDetails();editTrade(dtCurrentId)">Edit</button>
   <button class="primary" onclick="closeDetails()">Close</button>
@@ -631,6 +737,65 @@ function loadChartFromInput(){let raw=$('tvSymbolInput').value.trim();if(!raw)re
 function loadTvScreener(){if(tvScreenerLoaded)return;tvScreenerLoaded=true;let el=$('tvScreenerContainer');if(!el)return;let outer=document.createElement('div');outer.className='tradingview-widget-container';outer.style.height='100%';outer.style.width='100%';let inner=document.createElement('div');inner.className='tradingview-widget-container__widget';inner.style.height='100%';inner.style.width='100%';outer.appendChild(inner);let script=document.createElement('script');script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/embed-widget-screener.js';script.async=true;script.text=JSON.stringify({width:'100%',height:'100%',defaultColumn:'overview',defaultScreen:'top_gainers',market:'us',showToolbar:true,colorTheme:'dark',locale:'en'});outer.appendChild(script);el.innerHTML='';el.appendChild(outer)}
 function initScreenerTab(){if(!tvChartLoaded){tvChartLoaded=true;loadTvChart(currentTvSymbol)}loadTvScreener()}
 function viewChartForTrade(){let t=trades.find(x=>x.id===dtCurrentId);if(!t)return;let tvSym=mapToTvSymbol(t.symbol,t.type);closeDetails();show('screener');$('tvSymbolInput').value=t.symbol;$('tvAssetType').value=['stock','crypto','forex','future'].includes(t.type)?t.type:'stock';loadTvChart(tvSym)}
+
+/* ---------- Shareable trade card image ---------- */
+function roundRectPath(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function generateTradeCardCanvas(t){
+  const W=640,H=420,scale=2;
+  const canvas=document.createElement('canvas');
+  canvas.width=W*scale;canvas.height=H*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(scale,scale);
+  let grad=ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,'#17171a');grad.addColorStop(1,'#0a0a0b');
+  roundRectPath(ctx,0,0,W,H,22);ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;
+  roundRectPath(ctx,0.5,0.5,W-1,H-1,22);ctx.stroke();
+  ctx.fillStyle='#c9a961';ctx.font='700 14px Inter, system-ui, sans-serif';ctx.textBaseline='alphabetic';
+  ctx.fillText('LEDGER · TRADE JOURNAL',36,44);
+  let pnl=parseFloat(t.pnl)||0;
+  let up=pnl>=0;
+  ctx.fillStyle='#f2f2f3';ctx.font='800 42px Inter, system-ui, sans-serif';
+  ctx.fillText(t.symbol||'',36,108);
+  ctx.fillStyle=up?'#3ecf8e':'#f2665e';ctx.font='800 58px Inter, system-ui, sans-serif';
+  ctx.fillText((up?'+$':'-$')+Math.abs(pnl).toFixed(2),36,178);
+  ctx.font='600 13px Inter, system-ui, sans-serif';ctx.fillStyle='#96969c';
+  let lines=[];
+  if(t.date)lines.push('Date: '+t.date);
+  if(t.side)lines.push('Side: '+t.side);
+  if(t.type)lines.push('Market: '+t.type);
+  if(t.setup)lines.push('Setup: '+t.setup);
+  if(t.entry)lines.push('Entry: '+t.entry);
+  if(t.exit)lines.push('Exit: '+t.exit);
+  if(t.rr)lines.push('R:R: '+t.rr);
+  let colX=36,colY=222,lineH=25,col2X=W/2+10;
+  lines.forEach((l,i)=>{
+    let x=i<4?colX:col2X,y=colY+(i%4)*lineH;
+    ctx.fillText(l,x,y);
+  });
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.font='600 11px Inter, system-ui, sans-serif';
+  ctx.fillText('Made with Ledger',36,H-24);
+  return canvas;
+}
+async function shareTradeCard(){
+  let t=trades.find(x=>x.id===dtCurrentId);
+  if(!t)return;
+  let canvas;
+  try{canvas=generateTradeCardCanvas(t)}catch(e){alert("Couldn't generate the share image on this device.");return}
+  canvas.toBlob(async(blob)=>{
+    if(!blob){alert("Couldn't generate the share image.");return}
+    let filename=`ledger-${(t.symbol||'trade').toLowerCase()}-${t.date||'card'}.png`;
+    let file;
+    try{file=new File([blob],filename,{type:'image/png'})}catch(e){file=null}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:`${t.symbol} trade`,text:`${t.symbol}: ${money(parseFloat(t.pnl)||0)}`});return}catch(e){/* user cancelled or share failed - fall through to download */}
+    }
+    let url=URL.createObjectURL(blob);
+    let a=document.createElement('a');
+    a.href=url;a.download=filename;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  },'image/png');
+}
 let scrollLockY=0,scrollLockDepth=0;
 function lockScroll(){if(scrollLockDepth++>0)return;scrollLockY=window.scrollY;document.body.style.position='fixed';document.body.style.top=(-scrollLockY)+'px';document.body.style.left='0';document.body.style.right='0';document.body.style.width='100%'}
 function unlockScroll(){if(--scrollLockDepth>0)return;scrollLockDepth=0;document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';document.body.style.width='';window.scrollTo(0,scrollLockY)}
@@ -650,7 +815,7 @@ function smoothPath(pts){
   return d;
 }
 function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#c9a961" stop-opacity="0"/><stop offset="50%" stop-color="#c9a961" stop-opacity=".9"/><stop offset="100%" stop-color="#c9a961" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?'#3ecf8e':'#f2665e';let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="rgba(255,255,255,.1)"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
-function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
+function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();renderSetupBreakdown();renderEarnings();if(journalView==='calendar')renderCalendar();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
 function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
 function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
 $('shotFile').addEventListener('change',function(e){handleShotFile(e.target.files[0])});
@@ -663,6 +828,98 @@ async function saveTrade(){let x={date:$('date').value,type:$('type').value,symb
 async function removeTrade(id){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+id,{method:'DELETE'})).trades;render()}catch(e){alert(e.message)}}
 async function deleteFromDetails(){if(!confirm('Delete this trade?'))return;try{trades=(await api('/api/trades/'+dtCurrentId,{method:'DELETE'})).trades;render();closeDetails()}catch(e){alert(e.message)}}
 function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
+
+/* ---------- Journal: List/Calendar toggle ---------- */
+let journalView='list';
+function setJournalView(v){journalView=v;document.querySelectorAll('.jv-pill').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('journalListWrap').style.display=v==='list'?'block':'none';$('journalCalendarWrap').style.display=v==='calendar'?'block':'none';if(v==='calendar')renderCalendar()}
+
+/* ---------- Journal: P&L calendar heatmap ---------- */
+let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
+function calShift(delta){calMonth+=delta;if(calMonth<0){calMonth=11;calYear--}if(calMonth>11){calMonth=0;calYear++}renderCalendar()}
+function renderCalendar(){
+  let dayTotals={};
+  trades.forEach(t=>{if(!t.date)return;dayTotals[t.date]=(dayTotals[t.date]||0)+(parseFloat(t.pnl)||0)});
+  let first=new Date(calYear,calMonth,1);
+  let startDow=first.getDay();
+  let daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  let maxAbs=Math.max(1,...Object.values(dayTotals).map(v=>Math.abs(v)));
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div class="cal-cell cal-empty"></div>';
+  for(let day=1;day<=daysInMonth;day++){
+    let dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    let total=dayTotals[dateStr];
+    let cls='cal-cell';
+    let style='';
+    if(total!==undefined){
+      let intensity=Math.min(1,Math.abs(total)/maxAbs);
+      cls+=total>=0?' cal-pos':' cal-neg';
+      style=`--intensity:${intensity.toFixed(2)}`;
+    }
+    cells+=`<div class="${cls}" style="${style}" title="${dateStr}"><span class="cal-day">${day}</span>${total!==undefined?`<span class="cal-amt">${money(total)}</span>`:''}</div>`;
+  }
+  $('calMonthLabel').textContent=first.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  $('calGrid').innerHTML=cells;
+}
+
+/* ---------- Journal: performance by setup ---------- */
+function renderSetupBreakdown(){
+  let el=$('setupBreakdown');
+  if(!el)return;
+  let groups={};
+  trades.forEach(t=>{
+    let key=(t.setup||'').trim()||'No setup tagged';
+    if(!groups[key])groups[key]={count:0,total:0,wins:0};
+    groups[key].count++;
+    let pnl=parseFloat(t.pnl)||0;
+    groups[key].total+=pnl;
+    if(pnl>0)groups[key].wins++;
+  });
+  let list=Object.entries(groups).map(([name,g])=>({name,count:g.count,total:g.total,winRate:g.count?Math.round(g.wins/g.count*100):0})).sort((a,b)=>b.total-a.total);
+  if(!list.length){el.innerHTML='<div class="empty">Log trades with a Setup tag to see which patterns actually make money.</div>';return}
+  el.innerHTML=list.map(r=>`<div class="trade" style="cursor:default;grid-template-columns:1.5fr .9fr .9fr 1fr"><div class="symbol">${esc(r.name)}</div><div class="muted">${r.count} trade${r.count===1?'':'s'}</div><div class="muted">${r.winRate}% win</div><div class="${r.total>0?'pos':r.total<0?'neg':''}" style="font-weight:700">${money(r.total)}</div></div>`).join('');
+}
+
+/* ---------- Journal: CSV import ---------- */
+function triggerCsvImport(){$('csvImportInput').click()}
+
+/* ---------- Position size / risk calculator ---------- */
+function runRiskCalc(){
+  let account=parseFloat($('calcAccount').value);
+  let riskPct=parseFloat($('calcRiskPct').value);
+  let entry=parseFloat($('calcEntry').value);
+  let stop=parseFloat($('calcStop').value);
+  let out=$('calcResult');
+  out.style.display='block';
+  if([account,riskPct,entry,stop].some(v=>isNaN(v))){out.textContent='Fill in all four fields to calculate.';return}
+  if(account<=0||riskPct<=0||entry<=0||stop<0){out.textContent='Values must be positive numbers.';return}
+  if(entry===stop){out.textContent='Entry and stop loss price cannot be the same.';return}
+  let riskAmount=account*(riskPct/100);
+  let perUnitRisk=Math.abs(entry-stop);
+  let units=Math.floor(riskAmount/perUnitRisk);
+  let positionValue=units*entry;
+  let pctOfAccount=account>0?(positionValue/account*100):0;
+  out.innerHTML=`Risk amount: <b>$${riskAmount.toFixed(2)}</b><br>Position size: <b>${units.toLocaleString()} share${units===1?'':'s'}/unit${units===1?'':'s'}</b><br>Position value: <b>$${positionValue.toLocaleString(undefined,{maximumFractionDigits:2})}</b> (${pctOfAccount.toFixed(1)}% of account)`;
+}
+function parseCsvLine(line){let result=[],cur='',inQuotes=false;for(let i=0;i<line.length;i++){let c=line[i];if(inQuotes){if(c==='"'){if(line[i+1]==='"'){cur+='"';i++}else inQuotes=false}else cur+=c}else{if(c==='"')inQuotes=true;else if(c===','){result.push(cur);cur=''}else cur+=c}}result.push(cur);return result}
+async function handleCsvImport(e){
+  let file=e.target.files[0];
+  if(!file)return;
+  let text=await file.text();
+  let lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(lines.length<2){alert('That CSV looks empty.');e.target.value='';return}
+  let headers=parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+  let imported=0,failed=0;
+  for(let i=1;i<lines.length;i++){
+    let values=parseCsvLine(lines[i]);
+    let obj={};
+    headers.forEach((h,idx)=>obj[h]=values[idx]??'');
+    if(!obj.symbol||!obj.symbol.trim()){failed++;continue}
+    try{let d=await api('/api/trades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});trades=d.trades;imported++}catch(err){failed++}
+  }
+  render();
+  alert(`Imported ${imported} trade${imported===1?'':'s'}.`+(failed?` ${failed} row${failed===1?'':'s'} skipped (missing symbol or invalid data).`:''));
+  e.target.value='';
+}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
 /* ---------- Market Monitor (simulated feed) ---------- */
 function mmMakeSparkline(sentiment){let pts=[100];for(let i=0;i<9;i++){let drift=sentiment==='bullish'?(Math.random()*1.1-0.15):(Math.random()*1.1-0.95);pts.push(pts[pts.length-1]+drift)}return pts}
@@ -696,12 +953,40 @@ async function mmFetchNews(){
 }
 function mmStartPolling(){if(mmPollTimer)return;mmFetchNews();mmPollTimer=setInterval(mmFetchNews,30000)}
 
+/* ---------- Earnings calendar ---------- */
+let earningsFeed=[],earningsConfigured=true;
+async function mmFetchEarnings(){
+  let res,data;
+  try{res=await fetch('/api/earnings');data=await res.json()}catch(e){return}
+  earningsConfigured=!!data.configured;
+  earningsFeed=data.items||[];
+  renderEarnings();
+}
+function renderEarnings(){
+  let el=$('earningsList');
+  if(!el)return;
+  if(!earningsConfigured){el.innerHTML='<div class="empty">Live earnings dates need a FINNHUB_API_KEY \u2014 same key as the news feed above.</div>';return}
+  if(!earningsFeed.length){el.innerHTML='<div class="empty">No earnings scheduled in the next two weeks.</div>';return}
+  let mySymbols=new Set(trades.map(t=>(t.symbol||'').toUpperCase()).filter(Boolean));
+  let mine=earningsFeed.filter(e=>mySymbols.has(e.symbol));
+  let rest=earningsFeed.filter(e=>!mySymbols.has(e.symbol)).slice(0,12);
+  let renderRow=(e,isMine)=>{
+    let hourLabel=e.hour==='bmo'?'Before open':e.hour==='amc'?'After close':e.hour==='dmh'?'During hours':'';
+    let d=new Date(e.date+'T00:00:00');
+    let dateLabel=isNaN(d)?e.date:d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    return `<div class="earn-row"><div class="earn-sym">${esc(e.symbol)}${isMine?'<span class="earn-mine">Your journal</span>':''}</div><div><div class="earn-date">${dateLabel}</div>${hourLabel?`<div class="earn-hour">${hourLabel}</div>`:''}</div></div>`;
+  };
+  let html=mine.map(e=>renderRow(e,true)).join('')+rest.map(e=>renderRow(e,false)).join('');
+  el.innerHTML=html||'<div class="empty">No earnings scheduled in the next two weeks.</div>';
+}
+
 /* ---------- Breaking alerts (Notification API) ---------- */
 let breakingAlertsEnabled=false;
 function updateAlertsButton(){let btn=$('alertsToggleBtn');if(!btn)return;btn.textContent=breakingAlertsEnabled?'🔔 Alerts On':'🔔 Enable Breaking Alerts';btn.classList.toggle('alerts-on',breakingAlertsEnabled)}
 function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();try{new Notification('Breaking alerts enabled',{body:'You will be notified when new live market headlines break.'})}catch(e){}}else{alert('Notification permission was not granted.')}})}
 function fireBreakingNotification(entry){if(!breakingAlertsEnabled)return;if(!('Notification' in window)||Notification.permission!=='granted')return;let up=entry.sentiment==='bullish';let title=(up?'🟢 BULLISH':'🔴 BEARISH')+' · '+entry.tickerDisplay;try{new Notification(title,{body:entry.headline,tag:entry.id})}catch(e){}}
 mmStartPolling();
+mmFetchEarnings();
 
 (async()=>{let p=new URLSearchParams(location.search);let authErr=p.get('auth');if(authErr){let msg={configuration_needed:'Google sign-in is not fully configured yet (missing APP_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or SESSION_SECRET).',state_mismatch:'Sign-in session expired or the state cookie was blocked. Try again, and make sure cookies are allowed.',token_exchange_failed:'Google rejected the sign-in exchange. This usually means the redirect URI in Google Cloud does not exactly match APP_URL, or the client secret is wrong.',google_http_error:'Google returned an error during sign-in. Check Render logs for the exact response.',exception:'Something unexpected went wrong during sign-in. Check Render logs for details.'}[authErr]||('Sign-in failed: '+authErr);let el=document.createElement('div');el.className='notice';el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99;max-width:90vw;background:#3e1c1c;border:1px solid #ff91a5;color:#ffd7dd';el.textContent=msg;document.body.appendChild(el);history.replaceState({},'',location.pathname)}try{let d=await api('/api/me');me=d.user;if(me)trades=(await api('/api/trades')).trades}catch(e){}render()})();
 </script></body></html>'''
@@ -868,6 +1153,10 @@ class Handler(BaseHTTPRequestHandler):
             with NEWS_LOCK:
                 items = list(NEWS_CACHE)
             return self.send_json({'items': items, 'configured': bool(FINNHUB_API_KEY)})
+        if path == '/api/earnings':
+            with EARNINGS_LOCK:
+                items = list(EARNINGS_CACHE)
+            return self.send_json({'items': items, 'configured': bool(FINNHUB_API_KEY)})
         if path == '/api/trades':
             if (u := self.require_user()):
                 with LOCK:
@@ -1011,6 +1300,8 @@ def main():
     else:
         print(f'Starting live news poller (refreshing every {NEWS_POLL_SECONDS}s)', flush=True)
         Thread(target=news_poll_loop, daemon=True).start()
+        print(f'Starting earnings calendar poller (refreshing every {EARNINGS_POLL_SECONDS}s)', flush=True)
+        Thread(target=earnings_poll_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
 
 
