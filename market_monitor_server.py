@@ -345,7 +345,7 @@ PAGE = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
   --ease:cubic-bezier(.16,1,.3,1);
   --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;--sp-7:48px;
 }
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
 
 /* ---------- Ambient backdrop (subtle, static) ---------- */
 .mesh-bg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
@@ -441,16 +441,17 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 3px var(--neg-s
 .badge-mkt.mkt-index{background:rgba(255,255,255,.06);color:var(--ink)}
 
 /* ---------- Modal: mobile bottom-sheet / desktop centered ---------- */
-.modal{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s var(--ease),visibility 0s linear .25s}
+.modal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s var(--ease),visibility 0s linear .25s}
 .modal.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s var(--ease),visibility 0s linear 0s}
-.dialog{width:100%;max-width:440px;background:var(--card-bg-solid);border:0.5px solid var(--card-border);border-radius:24px 24px 0 0;padding:0 var(--sp-5) calc(var(--sp-5) + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -10px 40px rgba(0,0,0,.4);transform:translateY(100%);transition:transform .3s var(--ease)}
+.dialog{width:100%;max-width:440px;min-width:0;box-sizing:border-box;background:var(--card-bg-solid);border:0.5px solid var(--card-border);border-radius:24px 24px 0 0;padding:0 var(--sp-5) calc(var(--sp-5) + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 -10px 40px rgba(0,0,0,.4);transform:translateY(100%);transition:transform .3s var(--ease)}
 .modal.open .dialog{transform:translateY(0)}
 .drag-handle{width:36px;height:4px;border-radius:99px;background:rgba(255,255,255,.16);display:block;margin:var(--sp-3) auto var(--sp-1)}
 .dialog h2{margin:var(--sp-5) 0 var(--sp-4);padding-left:2px;font-size:18px;font-weight:700}
 
 /* ---------- Form ---------- */
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
-.formgrid label{display:grid;gap:var(--sp-1);color:#b0b0b6;font-size:12px;font-weight:600}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);min-width:0}
+.formgrid label{display:grid;gap:var(--sp-1);color:#b0b0b6;font-size:12px;font-weight:600;min-width:0}
+.formgrid label input,.formgrid label select{min-width:0;width:100%}
 .full{grid-column:1/-1}
 .settings{max-width:680px}
 .account{display:flex;align-items:center;gap:var(--sp-4)}
@@ -534,7 +535,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 #alertsToggleBtn.alerts-on{background:var(--pos-soft);color:var(--pos)}
 
 /* ---------- News details panel ---------- */
-.newsPanel{position:fixed;inset:0;z-index:25;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s var(--ease),visibility 0s linear .25s}
+.newsPanel{position:fixed;inset:0;z-index:61;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s var(--ease),visibility 0s linear .25s}
 .newsPanel.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s var(--ease),visibility 0s linear 0s}
 .newsPanel .panelBody{width:100%;max-width:440px;background:var(--card-bg-solid);border:0.5px solid var(--card-border);border-radius:24px 24px 0 0;padding:0 var(--sp-5) calc(var(--sp-5) + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -10px 40px rgba(0,0,0,.4);transform:translateY(100%);transition:transform .3s var(--ease)}
 .newsPanel.open .panelBody{transform:translateY(0)}
