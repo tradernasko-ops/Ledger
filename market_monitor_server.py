@@ -83,6 +83,12 @@ _BEARISH_RE = re.compile("|".join(_BEARISH_PATTERNS), re.IGNORECASE)
 _CASHTAG_RE = re.compile(r"\$([A-Z]{1,5})\b")
 _FX_PAIR_RE = re.compile(r"\b(EUR|GBP|USD|JPY|CHF|AUD|NZD|CAD)/?(EUR|GBP|USD|JPY|CHF|AUD|NZD|CAD)\b")
 _FUTURES_TICKERS = {"GC", "CL", "SI", "NG", "ES", "NQ", "YM", "ZC", "ZW", "ZS", "HG"}
+_FUTURES_KEYWORDS_RE = re.compile(
+    r"\b(gold|silver|crude(?:\s+oil)?|\boil\b|wti|brent|natural\s+gas|copper|corn|wheat|soybean|"
+    r"s&p\s+futures|dow\s+futures|nasdaq\s+futures|treasury\s+yield|bond\s+yield|commodit(?:y|ies)|"
+    r"barrel[s]?|opec)\b",
+    re.IGNORECASE,
+)
 
 
 def classify_headline(text):
@@ -109,18 +115,18 @@ def extract_ticker_and_category(item):
         sym = cash.group(1)
         cat = "futures" if sym in _FUTURES_TICKERS else "stocks"
         return sym, cat
+    if _FUTURES_KEYWORDS_RE.search(text):
+        return None, "futures"
     return None, "stocks"
 
 
-def fetch_finnhub_news():
-    if not FINNHUB_API_KEY:
-        return []
-    url = "https://finnhub.io/api/v1/news?category=general&token=" + urllib.parse.quote(FINNHUB_API_KEY)
+def _fetch_finnhub_category(category, forced_category=None):
+    url = "https://finnhub.io/api/v1/news?category=" + category + "&token=" + urllib.parse.quote(FINNHUB_API_KEY)
     req = urllib.request.Request(url, headers={"User-Agent": "Ledger/1.0"})
     with urllib.request.urlopen(req, timeout=12) as resp:
         raw = json.loads(resp.read().decode())
     out = []
-    for item in raw[:60]:
+    for item in raw[:40]:
         headline = str(item.get("headline", "")).strip()
         summary = str(item.get("summary", "")).strip()
         if not headline:
@@ -128,7 +134,15 @@ def fetch_finnhub_news():
         sentiment = classify_headline(headline + " " + summary)
         if sentiment is None:
             continue  # skip items with no clear directional signal
-        ticker, category = extract_ticker_and_category(item)
+        if forced_category:
+            # Trust Finnhub's own categorization for this endpoint rather than guessing.
+            ticker, _ = extract_ticker_and_category(item)
+            if not ticker:
+                fx = _FX_PAIR_RE.search(headline + " " + summary)
+                ticker = fx.group(0).upper() if fx else None
+            cat = forced_category
+        else:
+            ticker, cat = extract_ticker_and_category(item)
         out.append({
             "id": str(item.get("id", "")) or hashlib.sha256(headline.encode()).hexdigest()[:16],
             "headline": headline,
@@ -138,10 +152,37 @@ def fetch_finnhub_news():
             "datetime": int(item.get("datetime", 0)) * 1000,
             "sentiment": sentiment,
             "ticker": ticker,
-            "category": category,
+            "category": cat,
         })
-    out.sort(key=lambda x: x["datetime"], reverse=True)
     return out
+
+
+def fetch_finnhub_news():
+    if not FINNHUB_API_KEY:
+        return []
+    combined = []
+    seen_ids = set()
+
+    # general: mostly macro/company news - categorized via ticker/keyword heuristics
+    try:
+        for entry in _fetch_finnhub_category("general"):
+            if entry["id"] not in seen_ids:
+                seen_ids.add(entry["id"])
+                combined.append(entry)
+    except Exception as e:
+        print(f"News fetch error (general): {e}", flush=True)
+
+    # forex: Finnhub's own dedicated category - trust it directly rather than guessing
+    try:
+        for entry in _fetch_finnhub_category("forex", forced_category="forex"):
+            if entry["id"] not in seen_ids:
+                seen_ids.add(entry["id"])
+                combined.append(entry)
+    except Exception as e:
+        print(f"News fetch error (forex): {e}", flush=True)
+
+    combined.sort(key=lambda x: x["datetime"], reverse=True)
+    return combined[:60]
 
 
 def news_poll_loop():
