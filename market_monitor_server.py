@@ -18,10 +18,10 @@ redirect URI on the OAuth client.
 You can inspect or edit trades directly any time from the Neon dashboard's
 SQL Editor (Tables -> trades), independent of what Render is doing.
 """
-import base64, hashlib, hmac, json, os, secrets, sys, time, urllib.error, urllib.parse, urllib.request, uuid
+import base64, hashlib, hmac, json, os, re, secrets, sys, time, urllib.error, urllib.parse, urllib.request, uuid
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from threading import RLock
+from threading import RLock, Thread
 
 # Render captures stdout through a pipe, not a terminal, so Python's default
 # buffering can silently hold log lines back indefinitely on a long-running
@@ -42,6 +42,107 @@ SESSION_SECRET = os.environ.get("SESSION_SECRET", "").strip()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 LOCK = RLock()
+
+# ---------- Live news: Finnhub integration ----------
+FINNHUB_API_KEY = os.environ.get("FINNHUB_API_KEY", "").strip()
+NEWS_LOCK = RLock()
+NEWS_CACHE = []
+NEWS_POLL_SECONDS = 60
+
+# Keyword-based directional bias classifier. This is a simple heuristic
+# (regex keyword matching), not real sentiment analysis or financial advice -
+# it just flags headlines containing common bullish/bearish trigger phrases.
+_BULLISH_PATTERNS = [
+    r"surpasse?s?\s+expectation", r"beats?\s+estimate", r"hikes?\s+dividend",
+    r"\bsurge[sd]?\b", r"\brally(?:ing|ies)?\b", r"\bupgrade[sd]?\b",
+    r"record\s+(?:profit|revenue|high)s?", r"\bsoar[sd]?\b", r"strong\s+demand",
+    r"\bjump[sd]?\b", r"\bclimb[sd]?\b", r"raises?\s+guidance", r"\bbullish\b",
+]
+_BEARISH_PATTERNS = [
+    r"misses?\s+estimate", r"\binvestigation\b", r"\bprobe[sd]?\b", r"\bplunge[sd]?\b",
+    r"\bdowngrade[sd]?\b", r"\blawsuit\b", r"\brecall(?:s|ed)?\b",
+    r"\bslump[sd]?\b", r"\bslide[sd]?\b", r"cuts?\s+guidance", r"\bwarns?\b",
+    r"\bfalls?\b", r"\bdrop(?:s|ped)?\b", r"\bbearish\b",
+]
+_BULLISH_RE = re.compile("|".join(_BULLISH_PATTERNS), re.IGNORECASE)
+_BEARISH_RE = re.compile("|".join(_BEARISH_PATTERNS), re.IGNORECASE)
+_CASHTAG_RE = re.compile(r"\$([A-Z]{1,5})\b")
+_FX_PAIR_RE = re.compile(r"\b(EUR|GBP|USD|JPY|CHF|AUD|NZD|CAD)/?(EUR|GBP|USD|JPY|CHF|AUD|NZD|CAD)\b")
+_FUTURES_TICKERS = {"GC", "CL", "SI", "NG", "ES", "NQ", "YM", "ZC", "ZW", "ZS", "HG"}
+
+
+def classify_headline(text):
+    bulls = len(_BULLISH_RE.findall(text))
+    bears = len(_BEARISH_RE.findall(text))
+    if bulls == 0 and bears == 0:
+        return None
+    return "bullish" if bulls >= bears else "bearish"
+
+
+def extract_ticker_and_category(item):
+    related = (item.get("related") or "").strip()
+    if related:
+        first = related.split(",")[0].strip().upper()
+        if first:
+            cat = "futures" if first in _FUTURES_TICKERS else "stocks"
+            return first, cat
+    text = (item.get("headline", "") or "") + " " + (item.get("summary", "") or "")
+    fx = _FX_PAIR_RE.search(text)
+    if fx:
+        return fx.group(0).upper(), "forex"
+    cash = _CASHTAG_RE.search(text)
+    if cash:
+        sym = cash.group(1)
+        cat = "futures" if sym in _FUTURES_TICKERS else "stocks"
+        return sym, cat
+    return None, "stocks"
+
+
+def fetch_finnhub_news():
+    if not FINNHUB_API_KEY:
+        return []
+    url = "https://finnhub.io/api/v1/news?category=general&token=" + urllib.parse.quote(FINNHUB_API_KEY)
+    req = urllib.request.Request(url, headers={"User-Agent": "Ledger/1.0"})
+    with urllib.request.urlopen(req, timeout=12) as resp:
+        raw = json.loads(resp.read().decode())
+    out = []
+    for item in raw[:60]:
+        headline = str(item.get("headline", "")).strip()
+        summary = str(item.get("summary", "")).strip()
+        if not headline:
+            continue
+        sentiment = classify_headline(headline + " " + summary)
+        if sentiment is None:
+            continue  # skip items with no clear directional signal
+        ticker, category = extract_ticker_and_category(item)
+        out.append({
+            "id": str(item.get("id", "")) or hashlib.sha256(headline.encode()).hexdigest()[:16],
+            "headline": headline,
+            "summary": summary or headline,
+            "source": str(item.get("source", "Unknown")),
+            "url": str(item.get("url", "")),
+            "datetime": int(item.get("datetime", 0)) * 1000,
+            "sentiment": sentiment,
+            "ticker": ticker,
+            "category": category,
+        })
+    out.sort(key=lambda x: x["datetime"], reverse=True)
+    return out
+
+
+def news_poll_loop():
+    global NEWS_CACHE
+    while True:
+        try:
+            fresh = fetch_finnhub_news()
+            if fresh:
+                with NEWS_LOCK:
+                    NEWS_CACHE = fresh
+                print(f"News cache refreshed: {len(fresh)} items", flush=True)
+        except Exception as e:
+            print(f"News fetch error: {e}", flush=True)
+        time.sleep(NEWS_POLL_SECONDS)
+
 MAX_BODY = 1_600_000
 
 _POOL = None
@@ -564,38 +665,43 @@ async function deleteFromDetails(){if(!confirm('Delete this trade?'))return;try{
 function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
 /* ---------- Market Monitor (simulated feed) ---------- */
-const MM_HEADLINE_POOL=[
-  {headline:"Tesla Beats Q3 Delivery Estimates, Shares Surge in Pre-Market",source:"Reuters",category:"stocks",tickerDisplay:"$TSLA",body:"Tesla delivered 462,000 vehicles in the third quarter, topping Street consensus of 428,000. The beat was driven by stronger-than-expected North American demand ahead of a planned incentive expiration.",impact:"Delivery numbers beat consensus by roughly 8%, a gap that has historically correlated with a 2-4% intraday move on the announcement day."},
-  {headline:"Fed Officials Signal Openness to December Rate Cut",source:"Bloomberg",category:"forex",tickerDisplay:"EUR/USD",body:"Several Federal Reserve officials used public remarks this week to signal comfort with a further rate cut in December, citing cooling inflation data and a softening labor market.",impact:"A more dovish Fed narrows the US-Europe rate differential, which typically weighs on the dollar and lifts EUR/USD."},
-  {headline:"Gold Futures Climb as Safe-Haven Demand Builds on Geopolitical Risk",source:"MarketWatch",category:"futures",tickerDisplay:"/GC",body:"Gold futures rose for a third straight session as escalating geopolitical tensions pushed investors toward traditional safe-haven assets.",impact:"Rising geopolitical risk premiums are a classic tailwind for gold, which tends to attract inflows during periods of heightened uncertainty."},
-  {headline:"Regulatory Investigation Opened Into Meta's Data Practices",source:"Reuters",category:"stocks",tickerDisplay:"$META",body:"European regulators announced a formal investigation into Meta's handling of user data across its advertising products, with a decision expected within 12 months.",impact:"New regulatory investigations introduce legal overhang that has historically pressured large tech platform shares in the days following disclosure."},
-  {headline:"Crude Oil Slides on Surprise Inventory Surplus",source:"Bloomberg",category:"futures",tickerDisplay:"/CL",body:"US crude inventories rose by 4.2 million barrels last week, confounding analyst expectations for a modest draw and reviving oversupply concerns.",impact:"An unexpected inventory build signals softer near-term demand relative to supply, a combination that typically pressures crude prices lower."},
-  {headline:"Japanese Yen Weakens After BOJ Holds Rates Steady",source:"Nikkei",category:"forex",tickerDisplay:"USD/JPY",body:"The Bank of Japan kept its policy rate unchanged, disappointing traders positioned for a hawkish tilt following recent inflation prints.",impact:"A steady BOJ keeps Japan's yield disadvantage versus the US intact, a setup that tends to keep USD/JPY biased higher."},
-  {headline:"Nvidia Shares Jump on Strong Data Center Demand Commentary",source:"CNBC",category:"stocks",tickerDisplay:"$NVDA",body:"Nvidia executives told an industry conference that data center order backlogs remain well beyond current production capacity into next year.",impact:"Commentary pointing to durable, multi-quarter demand tends to support forward earnings estimates, a common driver of near-term share strength."},
-  {headline:"British Pound Slips on Weaker-Than-Expected UK Retail Sales",source:"Reuters",category:"forex",tickerDisplay:"GBP/USD",body:"UK retail sales fell 0.3% month-over-month, missing forecasts for a flat reading and adding to concerns about the health of the domestic consumer.",impact:"Soft consumer data raises the odds of a more dovish Bank of England path, a dynamic that has recently weighed on sterling."}
-];
-function classifySentiment(text){let bullWords=['beat','beats','surge','surges','soar','soars','jump','jumps','climb','climbs','upgrade','strong demand','record','rally','rallies'];let bearWords=['miss','misses','plunge','plunges','investigation','surplus','downgrade','recall','lawsuit','weak','slip','slips','slide','slides','falls','fall','disappoint'];let t=text.toLowerCase();let bull=bullWords.filter(w=>t.includes(w)).length;let bear=bearWords.filter(w=>t.includes(w)).length;return bull>=bear?'bullish':'bearish'}
 function mmMakeSparkline(sentiment){let pts=[100];for(let i=0;i<9;i++){let drift=sentiment==='bullish'?(Math.random()*1.1-0.15):(Math.random()*1.1-0.95);pts.push(pts[pts.length-1]+drift)}return pts}
-let mmFeed=[],mmFilter='all',mmIdSeq=0;
-function mmSeed(){let now=Date.now();mmFeed=MM_HEADLINE_POOL.map((item,i)=>{let sentiment=classifySentiment(item.headline);return Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:now-i*7*60000,spark:mmMakeSparkline(sentiment),isNew:false},item)})}
+function mmTickerDisplay(raw){if(!raw.ticker)return 'MARKET';if(raw.category==='forex')return raw.ticker;if(raw.category==='futures')return '/'+raw.ticker;return '$'+raw.ticker}
+function mmImpactText(raw){return raw.sentiment==='bullish'?'This headline contains language historically associated with positive price reactions (e.g. beats, surges, upgrades).':'This headline contains language historically associated with negative price reactions (e.g. misses, investigation, downgrades).'}
+function mmMapItem(raw,isNewFlag){return{id:raw.id,headline:raw.headline,body:raw.summary,source:raw.source,url:raw.url,datetime:raw.datetime,sentiment:raw.sentiment,category:raw.category,tickerDisplay:mmTickerDisplay(raw),impact:mmImpactText(raw),spark:mmMakeSparkline(raw.sentiment),isNew:!!isNewFlag}}
+let mmFeed=[],mmFilter='all',mmSeenIds=new Set(),mmFirstLoad=true,mmPollTimer=null,mmConfigured=true;
 function mmTimeAgo(ts){let s=Math.max(1,Math.floor((Date.now()-ts)/1000));if(s<60)return s+'s';let m=Math.floor(s/60);if(m<60)return m+'m';return Math.floor(m/60)+'h'}
 function mmCatClass(cat){return cat==='futures'?'mkt-futures':cat==='forex'?'mkt-forex':'mkt-stock'}
 function mmSentimentPill(sentiment){let up=sentiment==='bullish';let arrow=up?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 19l-6-6M12 19l6-6"/></svg>';let label=up?'Bullish biased (price likely UP)':'Bearish biased (price likely DOWN)';let emoji=up?'🟢':'🔴';return `<span class="mm-sentiment ${up?'bull':'bear'}">${arrow}${emoji} ${label}</span>`}
-function renderMonitor(){let list=mmFeed.filter(n=>mmFilter==='all'||n.category===mmFilter);let el=$('mmFeed');if(!list.length){el.innerHTML='<div class="empty">No headlines in this category yet.</div>';return}el.innerHTML=list.map(n=>`<div class="mm-card ${n.isNew?'mm-new':''}" onclick="openNewsDetails('${n.id}')"><div class="mm-top"><span class="mm-ticker ${mmCatClass(n.category)}">${esc(n.tickerDisplay)}</span><span class="mm-time">${mmTimeAgo(n.datetime)}</span></div><div class="mm-headline">${esc(n.headline)}</div><div class="mm-bottom"><span class="mm-source">${esc(n.source)}</span>${mmSentimentPill(n.sentiment)}</div></div>`).join('')}
+function renderMonitor(){let el=$('mmFeed');if(!el)return;if(!mmConfigured){el.innerHTML='<div class="empty">Live news isn\u2019t connected yet. Add a FINNHUB_API_KEY environment variable in Render to enable this feed.</div>';return}let list=mmFeed.filter(n=>mmFilter==='all'||n.category===mmFilter);if(!list.length){el.innerHTML='<div class="empty">No live headlines in this category yet.</div>';return}el.innerHTML=list.map(n=>`<div class="mm-card ${n.isNew?'mm-new':''}" onclick="openNewsDetails('${n.id}')"><div class="mm-top"><span class="mm-ticker ${mmCatClass(n.category)}">${esc(n.tickerDisplay)}</span><span class="mm-time">${mmTimeAgo(n.datetime)}</span></div><div class="mm-headline">${esc(n.headline)}</div><div class="mm-bottom"><span class="mm-source">${esc(n.source)}</span>${mmSentimentPill(n.sentiment)}</div></div>`).join('')}
 function setMonitorFilter(cat){mmFilter=cat;document.querySelectorAll('.mm-pill').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));renderMonitor()}
 function mmSparkSvg(pts,color){let w=560,h=70;let min=Math.min(...pts),max=Math.max(...pts),range=(max-min)||1;let mapped=pts.map((v,i)=>({x:i*(w/(pts.length-1)),y:h-6-(v-min)/range*(h-12)}));let d=smoothPath(mapped);return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:70px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 let mmCurrentId=null;
 function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurrentId=id;n.isNew=false;$('npTicker').textContent=n.tickerDisplay;$('npTicker').className='mm-ticker '+mmCatClass(n.category);$('npHeadline').textContent=n.headline;$('npMeta').textContent=`${n.source} · ${mmTimeAgo(n.datetime)} ago`;$('npSentimentPill').innerHTML=mmSentimentPill(n.sentiment);$('npBody').textContent=n.body;$('npImpact').textContent=n.impact;let up=n.sentiment==='bullish';$('npSpark').innerHTML=mmSparkSvg(n.spark,up?'#3ecf8e':'#f2665e');$('newsPanel').classList.add('open');lockScroll()}
 function closeNewsDetails(){$('newsPanel').classList.remove('open');unlockScroll()}
-function mmSimulateTick(){let monitorPage=document.getElementById('monitor');if(!monitorPage||!monitorPage.classList.contains('active'))return;let templates=[{headline:"Breaking: Apple Supplier Flags Component Shortage Ahead of Holiday Quarter",source:"Bloomberg",category:"stocks",tickerDisplay:"$AAPL",body:"A key Apple supplier warned of tightening component availability heading into the critical holiday shopping season, raising fulfillment concerns.",impact:"Supply constraints ahead of peak season can cap near-term revenue upside, a pattern that has weighed on shares in prior cycles."},{headline:"Breaking: OPEC+ Weighs Surprise Production Cut Amid Price Weakness",source:"Reuters",category:"futures",tickerDisplay:"/CL",body:"Delegates say OPEC+ members are discussing an unscheduled production cut at their next meeting in response to recent price softness.",impact:"Coordinated supply cuts from major producers are one of the more reliable near-term bullish catalysts for crude prices."},{headline:"Breaking: Swiss Franc Rallies as Safe-Haven Flows Accelerate",source:"MarketWatch",category:"forex",tickerDisplay:"USD/CHF",body:"The franc strengthened broadly as investors rotated into traditional safe-haven currencies amid renewed risk-off sentiment.",impact:"Safe-haven flows into the franc typically coincide with broader risk-off moves, pressuring USD/CHF lower."}];let t=templates[Math.floor(Math.random()*templates.length)];let sentiment=classifySentiment(t.headline);let entry=Object.assign({id:'mm'+(mmIdSeq++),sentiment,datetime:Date.now(),spark:mmMakeSparkline(sentiment),isNew:true},t);mmFeed.unshift(entry);if(mmFeed.length>40)mmFeed.pop();renderMonitor();fireBreakingNotification(entry)}
+
+/* ---------- Live news polling (real Finnhub-backed feed via our own /api/news) ---------- */
+async function mmFetchNews(){
+  let res,data;
+  try{res=await fetch('/api/news');data=await res.json()}catch(e){return}
+  mmConfigured=!!data.configured;
+  if(!mmConfigured){renderMonitor();return}
+  let incoming=data.items||[];
+  let freshRaw=mmFirstLoad?[]:incoming.filter(it=>!mmSeenIds.has(it.id));
+  incoming.forEach(it=>mmSeenIds.add(it.id));
+  mmFeed=incoming.map(raw=>mmMapItem(raw,freshRaw.some(x=>x.id===raw.id)));
+  renderMonitor();
+  if(!mmFirstLoad)freshRaw.forEach(raw=>fireBreakingNotification(mmMapItem(raw,true)));
+  mmFirstLoad=false;
+}
+function mmStartPolling(){if(mmPollTimer)return;mmFetchNews();mmPollTimer=setInterval(mmFetchNews,30000)}
 
 /* ---------- Breaking alerts (Notification API) ---------- */
 let breakingAlertsEnabled=false;
 function updateAlertsButton(){let btn=$('alertsToggleBtn');if(!btn)return;btn.textContent=breakingAlertsEnabled?'🔔 Alerts On':'🔔 Enable Breaking Alerts';btn.classList.toggle('alerts-on',breakingAlertsEnabled)}
-function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();try{new Notification('Breaking alerts enabled',{body:'You will be notified when new market-moving headlines break.'})}catch(e){}}else{alert('Notification permission was not granted.')}})}
+function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();try{new Notification('Breaking alerts enabled',{body:'You will be notified when new live market headlines break.'})}catch(e){}}else{alert('Notification permission was not granted.')}})}
 function fireBreakingNotification(entry){if(!breakingAlertsEnabled)return;if(!('Notification' in window)||Notification.permission!=='granted')return;let up=entry.sentiment==='bullish';let title=(up?'🟢 BULLISH':'🔴 BEARISH')+' · '+entry.tickerDisplay;try{new Notification(title,{body:entry.headline,tag:entry.id})}catch(e){}}
-mmSeed();
-setInterval(mmSimulateTick,18000);
+mmStartPolling();
 
 (async()=>{let p=new URLSearchParams(location.search);let authErr=p.get('auth');if(authErr){let msg={configuration_needed:'Google sign-in is not fully configured yet (missing APP_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or SESSION_SECRET).',state_mismatch:'Sign-in session expired or the state cookie was blocked. Try again, and make sure cookies are allowed.',token_exchange_failed:'Google rejected the sign-in exchange. This usually means the redirect URI in Google Cloud does not exactly match APP_URL, or the client secret is wrong.',google_http_error:'Google returned an error during sign-in. Check Render logs for the exact response.',exception:'Something unexpected went wrong during sign-in. Check Render logs for details.'}[authErr]||('Sign-in failed: '+authErr);let el=document.createElement('div');el.className='notice';el.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99;max-width:90vw;background:#3e1c1c;border:1px solid #ff91a5;color:#ffd7dd';el.textContent=msg;document.body.appendChild(el);history.replaceState({},'',location.pathname)}try{let d=await api('/api/me');me=d.user;if(me)trades=(await api('/api/trades')).trades}catch(e){}render()})();
 </script></body></html>'''
@@ -758,6 +864,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/me':
             u = session_for(self)
             return self.send_json({'user': {'email': u['email'], 'name': u['name']} if u else None})
+        if path == '/api/news':
+            with NEWS_LOCK:
+                items = list(NEWS_CACHE)
+            return self.send_json({'items': items, 'configured': bool(FINNHUB_API_KEY)})
         if path == '/api/trades':
             if (u := self.require_user()):
                 with LOCK:
@@ -896,6 +1006,11 @@ def main():
         ),
         flush=True,
     )
+    if not FINNHUB_API_KEY:
+        print('WARNING: FINNHUB_API_KEY not set - Market Monitor will show no live news until it is added.', flush=True)
+    else:
+        print(f'Starting live news poller (refreshing every {NEWS_POLL_SECONDS}s)', flush=True)
+        Thread(target=news_poll_loop, daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()
 
 
