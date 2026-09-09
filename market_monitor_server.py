@@ -468,6 +468,7 @@ button:hover,.button:hover{background:rgba(var(--tint-rgb),.09)}
 button:active,.button:active{transform:scale(.98)}
 .primary{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .primary:hover{background:#b7861a}
+button:disabled,.button:disabled{opacity:.55;cursor:default;pointer-events:none}
 .danger{color:#f2a29d;background:var(--neg-soft)}
 .danger:hover{background:rgba(242,102,94,.2)}
 .muted{color:var(--muted)}
@@ -751,7 +752,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 <div class="dz-sub">PNG or JPG, up to ~1.5MB</div>
 <input id="shotFile" type="file" accept="image/*">
 </div>
-<div id="shotPreviewWrap" style="display:none;margin-top:10px"><img id="shotPreview" style="max-width:100%;max-height:220px;border-radius:10px;display:block;border:0.5px solid var(--card-border)"><button type="button" onclick="removeShot()" style="margin-top:8px" class="danger">Remove image</button></div></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
+<div id="shotPreviewWrap" style="display:none;margin-top:10px"><img id="shotPreview" style="max-width:100%;max-height:220px;border-radius:10px;display:block;border:0.5px solid var(--card-border)"><button type="button" onclick="removeShot()" style="margin-top:8px" class="danger">Remove image</button></div></label></div><div id="formMsg" class="muted"></div><div class="footer-actions"><button onclick="closeTrade()">Cancel</button><button id="saveTradeBtn" class="primary" onclick="saveTrade()">Save trade</button></div></div></div>
 <div class="modal" id="lightbox" onclick="closeLightbox()"><img id="lightboxImg" style="max-width:92vw;max-height:88vh;border-radius:14px"></div>
 <div class="newsPanel" id="newsPanel" onclick="if(event.target===this)closeNewsDetails()">
 <div class="panelBody">
@@ -840,7 +841,7 @@ function animateStat(key,el,newValue,formatter,duration=550){
   }
   requestAnimationFrame(step);
 }
-function show(id){haptic(6);document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='monitor')renderMonitor();if(id==='screener')initScreenerTab();if(id==='settings'){let stored=getDailyLossLimit();$('dailyLossLimitInput').value=stored!==null?stored:''}render()}
+function show(id){haptic(6);document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));window.scrollTo(0,0);if(id==='monitor')renderMonitor();if(id==='screener')initScreenerTab();if(id==='settings'){let stored=getDailyLossLimit();$('dailyLossLimitInput').value=stored!==null?stored:''}render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
 function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:40%;height:9px"></div></div><div class="hide-mobile ghost" style="width:50%"></div><div class="hide-mobile ghost" style="width:50%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
 function rows(list,fullList=false){if(!list.length)return fullList?emptyState(ICON_JOURNAL,'No trades yet','Log your first trade whenever you\u2019re ready \u2014 tap "+ Log trade" above.'):skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:0.5px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
@@ -987,9 +988,30 @@ $('shotFile').addEventListener('change',function(e){handleShotFile(e.target.file
 function handleShotFile(file){if(!file)return;let reader=new FileReader();reader.onload=function(ev){let img=new Image();img.onload=function(){let maxW=900,scale=Math.min(1,maxW/img.width);let canvas=document.createElement('canvas');canvas.width=img.width*scale;canvas.height=img.height*scale;let ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);pendingShot=canvas.toDataURL('image/jpeg',0.72);setShotPreview(pendingShot)};img.src=ev.target.result};reader.readAsDataURL(file)}
 (function(){let dz=$('dropzone');['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>{let f=e.dataTransfer.files[0];if(f)handleShotFile(f)})})();
 $('pnl').addEventListener('input',function(){let v=parseFloat(this.value);this.classList.remove('pnl-pos','pnl-neg');if(!isNaN(v)&&v>0)this.classList.add('pnl-pos');else if(!isNaN(v)&&v<0)this.classList.add('pnl-neg')});
-function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('grade').value='';$('pnl').classList.remove('pnl-pos','pnl-neg');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('shotFile').value='';pendingShot='';setShotPreview('');$('modal').classList.add('open');lockScroll()};function closeTrade(){$('modal').classList.remove('open');unlockScroll()}
-function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes','grade'])$(k).value=t[k]??'';$('pnl').classList.remove('pnl-pos','pnl-neg');if(t.pnl>0)$('pnl').classList.add('pnl-pos');else if(t.pnl<0)$('pnl').classList.add('pnl-neg');$('shotFile').value='';pendingShot=t.screenshot||'';setShotPreview(pendingShot);$('modal').classList.add('open');lockScroll()}
-async function saveTrade(){let x={date:$('date').value,type:$('type').value,symbol:$('symbol').value,pnl:$('pnl').value,setup:$('setup').value,side:$('side').value,entry:$('entry').value,exit:$('exit').value,rr:$('rr').value,notes:$('notes').value,grade:$('grade').value,screenshot:pendingShot};if(!x.symbol.trim())return $('formMsg').textContent='Please enter a symbol.';try{let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});trades=d.trades;haptic(12);closeTrade();render()}catch(e){$('formMsg').textContent=e.message}}
+function openTrade(){if(!me){show('settings');return}editing=null;$('formTitle').textContent='Log a trade';['symbol','pnl','setup','entry','exit','rr','notes'].forEach(k=>$(k).value='');$('grade').value='';$('pnl').classList.remove('pnl-pos','pnl-neg');$('date').value=new Date().toISOString().slice(0,10);$('type').value='stock';$('side').value='Long';$('formMsg').textContent='';$('shotFile').value='';pendingShot='';setShotPreview('');saveInFlight=false;let sb=$('saveTradeBtn');if(sb){sb.disabled=false;sb.textContent='Save trade'}$('modal').classList.add('open');lockScroll()};function closeTrade(){$('modal').classList.remove('open');unlockScroll()}
+function editTrade(id){let t=trades.find(x=>x.id===id);if(!t)return;editing=id;$('formTitle').textContent='Edit trade';for(let k of ['date','type','symbol','pnl','setup','side','entry','exit','rr','notes','grade'])$(k).value=t[k]??'';$('pnl').classList.remove('pnl-pos','pnl-neg');if(t.pnl>0)$('pnl').classList.add('pnl-pos');else if(t.pnl<0)$('pnl').classList.add('pnl-neg');$('shotFile').value='';pendingShot=t.screenshot||'';setShotPreview(pendingShot);saveInFlight=false;let sb2=$('saveTradeBtn');if(sb2){sb2.disabled=false;sb2.textContent='Save trade'}$('modal').classList.add('open');lockScroll()}
+let saveInFlight=false;
+async function saveTrade(){
+  if(saveInFlight)return;
+  let x={date:$('date').value,type:$('type').value,symbol:$('symbol').value,pnl:$('pnl').value,setup:$('setup').value,side:$('side').value,entry:$('entry').value,exit:$('exit').value,rr:$('rr').value,notes:$('notes').value,grade:$('grade').value,screenshot:pendingShot};
+  if(!x.symbol.trim())return $('formMsg').textContent='Please enter a symbol.';
+  saveInFlight=true;
+  let btn=$('saveTradeBtn');
+  let originalLabel=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Saving…'}
+  try{
+    let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});
+    trades=d.trades;
+    haptic(12);
+    closeTrade();
+    render();
+  }catch(e){
+    $('formMsg').textContent=e.message;
+  }finally{
+    saveInFlight=false;
+    if(btn){btn.disabled=false;btn.textContent=originalLabel}
+  }
+}
 /* ---------- Delete with undo ---------- */
 let pendingDeleteTimer=null,pendingDeleteTrade=null,pendingDeleteIndex=null;
 function showUndoToast(){
@@ -1282,6 +1304,15 @@ function initPullToRefresh(){
     indicator.style.opacity='0';
   },{passive:true});
 }
+/* ---------- Escape key closes any open modal/panel ---------- */
+document.addEventListener('keydown',(e)=>{
+  if(e.key!=='Escape')return;
+  if($('lightbox').classList.contains('open'))closeLightbox();
+  else if($('modal').classList.contains('open'))closeTrade();
+  else if($('detailsModal').classList.contains('open'))closeDetails();
+  else if($('newsPanel').classList.contains('open'))closeNewsDetails();
+});
+
 initPullToRefresh();
 
 mmStartPolling();
