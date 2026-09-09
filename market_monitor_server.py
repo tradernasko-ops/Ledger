@@ -424,6 +424,7 @@ body[data-theme="dark"]{
 }
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;transition:background .25s ease,color .25s ease}
 .theme-toggle-btn{all:unset;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted);background:rgba(var(--tint-rgb),.05);transition:background .15s var(--ease),color .15s var(--ease)}
+.theme-toggle-btn:focus-visible,.header-icon-btn:focus-visible{box-shadow:0 0 0 3px var(--accent-soft),0 0 0 1.5px var(--accent)}
 body[data-theme="dark"] .theme-toggle-btn{background:rgba(255,255,255,.06)}
 .theme-toggle-btn:hover{background:rgba(var(--tint-rgb),.09)}
 body[data-theme="dark"] .theme-toggle-btn:hover{background:rgba(255,255,255,.1)}
@@ -456,7 +457,9 @@ header{height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-in
 .undo-toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:408px;margin:0 auto;z-index:65;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:var(--radius-md);background:var(--card-bg-solid);border:0.5px solid var(--card-border);box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink);font-size:13.5px;font-weight:600;opacity:0;transform:translateY(12px);transition:opacity .22s var(--ease),transform .22s var(--ease);pointer-events:none}
 .undo-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 .undo-toast button{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:13px;padding:4px 8px}
+.undo-toast button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .bottom-dock button{all:unset;cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 4px;color:var(--muted);transition:color .15s var(--ease)}
+.bottom-dock button:focus-visible{background:var(--accent-soft);border-radius:12px}
 .bottom-dock button span{font-size:9.5px;font-weight:600;letter-spacing:.1px}
 .bottom-dock button svg{opacity:.85;transition:opacity .15s var(--ease)}
 .bottom-dock button.active{color:var(--accent)}
@@ -465,6 +468,7 @@ header{height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-in
 /* ---------- Buttons ---------- */
 button,.button{border:0;border-radius:var(--radius-sm);padding:10px 16px;background:rgba(var(--tint-rgb),.05);color:var(--ink);font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;display:inline-block;min-height:44px;transition:background .15s var(--ease)}
 button:hover,.button:hover{background:rgba(var(--tint-rgb),.09)}
+button:focus-visible,.button:focus-visible,a:focus-visible{outline:none;box-shadow:0 0 0 3px var(--accent-soft),0 0 0 1.5px var(--accent)}
 button:active,.button:active{transform:scale(.98)}
 .primary{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .primary:hover{background:#b7861a}
