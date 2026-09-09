@@ -518,6 +518,10 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 3px var(--neg-s
 .symbol:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:7px}
 .trade:nth-child(odd) .symbol:before{background:#8b8bf5}
 .empty{padding:var(--sp-6) var(--sp-4);text-align:center;color:var(--muted);border:1px dashed var(--card-border);border-radius:var(--radius-md)}
+.empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--sp-6) var(--sp-4);gap:6px}
+.empty-state-icon{width:52px;height:52px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.empty-state-heading{font-weight:700;font-size:14px;color:var(--ink)}
+.empty-state-sub{font-size:12.5px;color:var(--muted);max-width:260px;line-height:1.5}
 
 /* ---------- Badges ---------- */
 .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.2px;text-transform:uppercase}
@@ -810,10 +814,36 @@ function toggleTheme(){applyTheme(isDarkTheme()?'light':'dark');if(typeof draw==
 let trades=[],me=null,editing=null,pendingShot='';const $=id=>document.getElementById(id);$('redirect').textContent=location.origin+'/auth/google/callback';
 async function api(url,opt={}){const r=await fetch(url,opt);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');return r.json()}
 function money(x){return (x>=0?'+$':'-$')+Math.abs(x).toFixed(2)}function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+/* ---------- Polished empty states ---------- */
+const ICON_JOURNAL='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 7h6M9 11h6M9 15h3"/></svg>';
+const ICON_TAG='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 12 22l-9-9V4a1 1 0 0 1 1-1h9l7.59 7.59a2 2 0 0 1 0 2.82z"/><circle cx="8.5" cy="8.5" r="1"/></svg>';
+const ICON_PLUG='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12l-1 6a5 5 0 0 1-5 4 5 5 0 0 1-5-4z"/><path d="M12 18v4"/></svg>';
+const ICON_NEWS='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13v13a3 3 0 0 0 3 3H7a3 3 0 0 1-3-3z"/><path d="M17 4h3v14"/><path d="M8 8h6M8 12h6M8 16h3"/></svg>';
+const ICON_CALENDAR='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+function emptyState(icon,heading,sub){return `<div class="empty-state"><div class="empty-state-icon">${icon}</div><div class="empty-state-heading">${heading}</div><div class="empty-state-sub">${sub}</div></div>`}
+let _statAnimCache={};
+function animateStat(key,el,newValue,formatter,duration=550){
+  let prev=_statAnimCache[key];
+  _statAnimCache[key]=newValue;
+  if(typeof newValue!=='number'||isNaN(newValue)){el.textContent=formatter(newValue);return}
+  let from=(typeof prev==='number'&&!isNaN(prev))?prev:0;
+  if(from===newValue){el.textContent=formatter(newValue);return}
+  let start=performance.now();
+  function step(now){
+    let progress=Math.min((now-start)/duration,1);
+    let eased=1-Math.pow(1-progress,3);
+    let current=from+(newValue-from)*eased;
+    el.textContent=formatter(current);
+    if(progress<1)requestAnimationFrame(step);
+    else el.textContent=formatter(newValue);
+  }
+  requestAnimationFrame(step);
+}
 function show(id){haptic(6);document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='monitor')renderMonitor();if(id==='screener')initScreenerTab();if(id==='settings'){let stored=getDailyLossLimit();$('dailyLossLimitInput').value=stored!==null?stored:''}render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
 function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:70%"></div><div class="ghost" style="width:40%;height:9px"></div></div><div class="hide-mobile ghost" style="width:50%"></div><div class="hide-mobile ghost" style="width:50%"></div><div class="ghost" style="width:55%"></div><div></div></div>`;return s}
-function rows(list,fullList=false){if(!list.length)return fullList?'<div class="empty">No trades yet. Log your first trade when you are ready.</div>':skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:0.5px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
+function rows(list,fullList=false){if(!list.length)return fullList?emptyState(ICON_JOURNAL,'No trades yet','Log your first trade whenever you\u2019re ready \u2014 tap "+ Log trade" above.'):skeletonRows(3);return list.map(t=>{let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:0.5px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div class="hide-mobile"><span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span></div><div class="hide-mobile"><span class="badge ${sideClass}">${esc(t.side||'Long')}</span></div><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div><div class="muted" style="text-align:right;font-size:17px">›</div></div>`}).join('')}
 let dtCurrentId=null;
 function openTradeDetails(id){let t=trades.find(x=>x.id===id);if(!t)return;dtCurrentId=id;$('dtSymbol').textContent=t.symbol;$('dtDate').textContent=t.date||'';let pnlEl=$('dtPnl');pnlEl.textContent=money(t.pnl);pnlEl.className='value '+(t.pnl>0?'pos':t.pnl<0?'neg':'');let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let gradeBadge=t.grade?`<span class="badge badge-grade-${t.grade.toLowerCase()}">Grade ${esc(t.grade)}</span>`:'';$('dtBadges').innerHTML=`<span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span><span class="badge ${sideClass}">${esc(t.side||'Long')}</span>${gradeBadge}`;$('dtEntry').textContent=t.entry||'—';$('dtExit').textContent=t.exit||'—';$('dtRR').textContent=t.rr||'—';$('dtSetup').textContent=t.setup||'—';$('dtNotes').textContent=t.notes||'No notes added.';if(t.screenshot){$('dtShot').src=t.screenshot;$('dtShotWrap').style.display='block'}else{$('dtShotWrap').style.display='none'}$('detailsModal').classList.add('open');lockScroll()}
 function closeDetails(){$('detailsModal').classList.remove('open');unlockScroll()}
@@ -950,7 +980,7 @@ function smoothPath(pts){
   return d;
 }
 function draw(){let a=[...trades].reverse(),v=0,ptsRaw=[0,...a.map(t=>v+=t.pnl)],min=Math.min(0,...ptsRaw),max=Math.max(0,...ptsRaw),range=max-min||1,w=600,h=160;let pts=ptsRaw.map((x,i)=>({x:i*(w/(ptsRaw.length-1||1)),y:h-10-(x-min)/range*(h-24)}));if(!trades.length){let ph=themeColor('#c9971f','#c9971f');$('chart').innerHTML=`<div class="chart-empty"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="ph" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${ph}" stop-opacity="0"/><stop offset="50%" stop-color="${ph}" stop-opacity=".9"/><stop offset="100%" stop-color="${ph}" stop-opacity="0"/></linearGradient></defs><polyline fill="none" stroke="url(#ph)" stroke-width="3" points="0,120 80,95 160,110 240,60 320,80 400,40 480,58 560,30 600,45"/></svg><div class="chart-empty-text">Log your first trade to unlock your equity curve</div></div>`;return}let lineD=smoothPath(pts);let areaD=lineD+` L${pts[pts.length-1].x},${h} L${pts[0].x},${h} Z`;let col=v>=0?themeColor('#1a8f5e','#3ecf8e'):themeColor('#c93b2c','#f2665e');let zeroLine=themeColor('rgba(var(--tint-rgb),.1)','rgba(255,255,255,.1)');let zeroY=(h-10-(0-min)/range*(h-24)).toFixed(2);$('chart').innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="eqfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${col}" stop-opacity=".35"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="eqglow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${w}" y1="${zeroY}" y2="${zeroY}" stroke="${zeroLine}"/><path d="${areaD}" fill="url(#eqfill)" stroke="none"/><path d="${lineD}" fill="none" stroke="${col}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" filter="url(#eqglow)"/></svg>`}
-function render(){let s=stats();$('net').textContent=money(s.net);$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');$('count').textContent=s.n;$('winrate').textContent=s.n?Math.round(s.w.length/s.n*100)+'%':'—';$('factor').textContent=s.pf==='∞'?'∞':s.pf.toFixed(2);$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();renderSetupBreakdown();renderEarnings();renderStreaks();renderDailyLossWarning();if(journalView==='calendar')renderCalendar();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
+function render(){let s=stats();animateStat('net',$('net'),s.net,v=>money(v));$('net').className='value '+(s.net>0?'pos':s.net<0?'neg':'');animateStat('count',$('count'),s.n,v=>Math.round(v));animateStat('winrate',$('winrate'),s.n?Math.round(s.w.length/s.n*100):null,v=>Math.round(v)+'%');if(!s.n)$('winrate').textContent='—';animateStat('factor',$('factor'),s.pf==='∞'?null:s.pf,v=>typeof v==='number'?v.toFixed(2):'∞');if(s.pf==='∞')$('factor').textContent='∞';$('dashSub').textContent=me?'Private journal for '+me.name:'Sign in to create your personal journal.';$('recent').innerHTML=rows(trades.slice(0,5));$('journalList').innerHTML=rows(filtered(),true);draw();renderSetupBreakdown();renderEarnings();renderStreaks();renderDailyLossWarning();if(journalView==='calendar')renderCalendar();let a=$('account');a.innerHTML=me?`<div class="account"><div class="avatar">${esc(me.name[0])}</div><div><strong>${esc(me.name)}</strong><br><span class="muted">${esc(me.email)}</span></div><div style="margin-left:auto"><a class="button" href="/auth/logout">Sign out</a></div></div>`:`<strong>You are not signed in.</strong><p class="muted">Sign in with Google to save and access your trades from your account.</p><a class="button primary" href="/auth/google">Continue with Google</a>`}
 function setShotPreview(dataUrl){if(dataUrl){$('shotPreview').src=dataUrl;$('shotPreviewWrap').style.display='block'}else{$('shotPreview').src='';$('shotPreviewWrap').style.display='none'}}
 function removeShot(){pendingShot='';$('shotFile').value='';setShotPreview('')}
 $('shotFile').addEventListener('change',function(e){handleShotFile(e.target.files[0])});
@@ -1065,7 +1095,7 @@ function renderSetupBreakdown(){
     if(pnl>0)groups[key].wins++;
   });
   let list=Object.entries(groups).map(([name,g])=>({name,count:g.count,total:g.total,winRate:g.count?Math.round(g.wins/g.count*100):0})).sort((a,b)=>b.total-a.total);
-  if(!list.length){el.innerHTML='<div class="empty">Log trades with a Setup tag to see which patterns actually make money.</div>';return}
+  if(!list.length){el.innerHTML=emptyState(ICON_TAG,'No setups tagged yet','Log trades with a Setup tag to see which patterns actually make money.');return}
   el.innerHTML=list.map(r=>`<div class="trade" style="cursor:default;grid-template-columns:1.5fr .9fr .9fr 1fr"><div class="symbol">${esc(r.name)}</div><div class="muted">${r.count} trade${r.count===1?'':'s'}</div><div class="muted">${r.winRate}% win</div><div class="${r.total>0?'pos':r.total<0?'neg':''}" style="font-weight:700">${money(r.total)}</div></div>`).join('');
 }
 
@@ -1142,7 +1172,7 @@ let mmFeed=[],mmFilter='all',mmSeenIds=new Set(),mmFirstLoad=true,mmPollTimer=nu
 function mmTimeAgo(ts){let s=Math.max(1,Math.floor((Date.now()-ts)/1000));if(s<60)return s+'s';let m=Math.floor(s/60);if(m<60)return m+'m';return Math.floor(m/60)+'h'}
 function mmCatClass(cat){return cat==='futures'?'mkt-futures':cat==='forex'?'mkt-forex':'mkt-stock'}
 function mmSentimentPill(sentiment){let up=sentiment==='bullish';let arrow=up?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 19l-6-6M12 19l6-6"/></svg>';let label=up?'Bullish biased (price likely UP)':'Bearish biased (price likely DOWN)';let emoji=up?'🟢':'🔴';return `<span class="mm-sentiment ${up?'bull':'bear'}">${arrow}${emoji} ${label}</span>`}
-function renderMonitor(){let el=$('mmFeed');if(!el)return;if(!mmConfigured){el.innerHTML='<div class="empty">Live news isn\u2019t connected yet. Add a FINNHUB_API_KEY environment variable in Render to enable this feed.</div>';return}let list=mmFeed.filter(n=>mmFilter==='all'||n.category===mmFilter);if(!list.length){el.innerHTML='<div class="empty">No live headlines in this category yet.</div>';return}el.innerHTML=list.map(n=>`<div class="mm-card ${n.isNew?'mm-new':''}" onclick="openNewsDetails('${n.id}')"><div class="mm-top"><span class="mm-ticker ${mmCatClass(n.category)}">${esc(n.tickerDisplay)}</span><span class="mm-time">${mmTimeAgo(n.datetime)}</span></div><div class="mm-headline">${esc(n.headline)}</div><div class="mm-bottom"><span class="mm-source">${esc(n.source)}</span>${mmSentimentPill(n.sentiment)}</div></div>`).join('')}
+function renderMonitor(){let el=$('mmFeed');if(!el)return;if(!mmConfigured){el.innerHTML=emptyState(ICON_PLUG,'Live news not connected','Add a FINNHUB_API_KEY environment variable in Render to enable this feed.');return}let list=mmFeed.filter(n=>mmFilter==='all'||n.category===mmFilter);if(!list.length){el.innerHTML=emptyState(ICON_NEWS,'Nothing here right now','No live headlines in this category at the moment. Check back soon.');return}el.innerHTML=list.map(n=>`<div class="mm-card ${n.isNew?'mm-new':''}" onclick="openNewsDetails('${n.id}')"><div class="mm-top"><span class="mm-ticker ${mmCatClass(n.category)}">${esc(n.tickerDisplay)}</span><span class="mm-time">${mmTimeAgo(n.datetime)}</span></div><div class="mm-headline">${esc(n.headline)}</div><div class="mm-bottom"><span class="mm-source">${esc(n.source)}</span>${mmSentimentPill(n.sentiment)}</div></div>`).join('')}
 function setMonitorFilter(cat){mmFilter=cat;document.querySelectorAll('.mm-pill').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));renderMonitor()}
 function mmSparkSvg(pts,color){let w=560,h=70;let min=Math.min(...pts),max=Math.max(...pts),range=(max-min)||1;let mapped=pts.map((v,i)=>({x:i*(w/(pts.length-1)),y:h-6-(v-min)/range*(h-12)}));let d=smoothPath(mapped);return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:70px"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
 let mmCurrentId=null;
@@ -1177,8 +1207,8 @@ async function mmFetchEarnings(){
 function renderEarnings(){
   let el=$('earningsList');
   if(!el)return;
-  if(!earningsConfigured){el.innerHTML='<div class="empty">Live earnings dates need a FINNHUB_API_KEY \u2014 same key as the news feed above.</div>';return}
-  if(!earningsFeed.length){el.innerHTML='<div class="empty">No earnings scheduled in the next two weeks.</div>';return}
+  if(!earningsConfigured){el.innerHTML=emptyState(ICON_PLUG,'Live earnings not connected','Uses the same FINNHUB_API_KEY as the news feed above.');return}
+  if(!earningsFeed.length){el.innerHTML=emptyState(ICON_CALENDAR,'Nothing scheduled','No earnings releases in the next two weeks.');return}
   let mySymbols=new Set(trades.map(t=>(t.symbol||'').toUpperCase()).filter(Boolean));
   let mine=earningsFeed.filter(e=>mySymbols.has(e.symbol));
   let rest=earningsFeed.filter(e=>!mySymbols.has(e.symbol)).slice(0,12);
@@ -1189,7 +1219,7 @@ function renderEarnings(){
     return `<div class="earn-row"><div class="earn-sym">${esc(e.symbol)}${isMine?'<span class="earn-mine">Your journal</span>':''}</div><div><div class="earn-date">${dateLabel}</div>${hourLabel?`<div class="earn-hour">${hourLabel}</div>`:''}</div></div>`;
   };
   let html=mine.map(e=>renderRow(e,true)).join('')+rest.map(e=>renderRow(e,false)).join('');
-  el.innerHTML=html||'<div class="empty">No earnings scheduled in the next two weeks.</div>';
+  el.innerHTML=html||emptyState(ICON_CALENDAR,'Nothing scheduled','No earnings releases in the next two weeks.');
 }
 
 /* ---------- Breaking alerts (Notification API) ---------- */
