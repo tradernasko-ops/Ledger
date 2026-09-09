@@ -435,6 +435,12 @@ body[data-theme="dark"] .theme-toggle-btn .moon-icon{display:none}
 /* ---------- Ambient backdrop (subtle, static) ---------- */
 .mesh-bg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
 .mesh-blob{position:absolute;border-radius:50%;filter:blur(130px)}
+.mesh-blob.b1{animation:meshDrift1 38s ease-in-out infinite}
+.mesh-blob.b2{animation:meshDrift2 44s ease-in-out infinite}
+.mesh-blob.b3{animation:meshDrift3 50s ease-in-out infinite}
+@keyframes meshDrift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5vw,6vw) scale(1.12)}}
+@keyframes meshDrift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,-4vw) scale(1.08)}}
+@keyframes meshDrift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-4vw,5vw) scale(1.15)}}
 .mesh-blob.b1{width:65vw;height:65vw;max-width:700px;max-height:700px;background:radial-gradient(circle,rgba(110,165,220,.18) 0%,transparent 68%);top:-18vw;left:-16vw}
 .mesh-blob.b2{width:60vw;height:60vw;max-width:680px;max-height:680px;background:radial-gradient(circle,rgba(201,151,31,.13) 0%,transparent 68%);bottom:-16vw;right:-12vw}
 .mesh-blob.b3{width:50vw;height:50vw;max-width:580px;max-height:580px;background:radial-gradient(circle,rgba(175,140,225,.1) 0%,transparent 70%);top:30%;left:48%}
@@ -455,6 +461,10 @@ header{height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-in
 .ptr-indicator.spinning svg{animation:ptrSpin .7s linear infinite}
 @keyframes ptrSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .undo-toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:408px;margin:0 auto;z-index:65;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:var(--radius-md);background:var(--card-bg-solid);border:0.5px solid var(--card-border);box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink);font-size:13.5px;font-weight:600;opacity:0;transform:translateY(12px);transition:opacity .22s var(--ease),transform .22s var(--ease);pointer-events:none}
+.success-toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:408px;margin:0 auto;z-index:65;display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:var(--radius-md);background:var(--card-bg-solid);border:0.5px solid var(--pos-soft);box-shadow:0 10px 30px rgba(0,0,0,.25);color:var(--ink);font-size:13.5px;font-weight:600;opacity:0;transform:translateY(12px) scale(.96);transition:opacity .25s var(--ease),transform .25s var(--ease);pointer-events:none}
+.success-toast.show{opacity:1;transform:translateY(0) scale(1)}
+.success-toast .success-icon{width:24px;height:24px;border-radius:50%;background:var(--pos-soft);color:var(--pos);display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:successPop .4s var(--ease)}
+@keyframes successPop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 .undo-toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 .undo-toast button{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:13px;padding:4px 8px}
 .undo-toast button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
@@ -493,6 +503,12 @@ button:disabled,.button:disabled{opacity:.55;cursor:default;pointer-events:none}
 
 /* ---------- Grid & cards ---------- */
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--sp-3);align-items:stretch;background:rgba(0,0,0,.2);padding:5px;border-radius:calc(var(--radius-lg) + 6px)}
+.grid .card{animation:cardIn .45s var(--ease) backwards}
+.grid .card:nth-child(1){animation-delay:.03s}
+.grid .card:nth-child(2){animation-delay:.09s}
+.grid .card:nth-child(3){animation-delay:.15s}
+.grid .card:nth-child(4){animation-delay:.21s}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .card{position:relative;overflow:hidden;background:var(--card-bg);backdrop-filter:blur(34px) saturate(180%);-webkit-backdrop-filter:blur(34px) saturate(180%);border:0.5px solid var(--card-border);border-radius:26px;padding:var(--sp-4);box-shadow:0 10px 34px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.3);transition:border-color .15s var(--ease),transform .15s var(--ease)}
 .card:before{content:"";position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,255,255,.16),rgba(255,255,255,0) 42%);pointer-events:none}
 .card:hover{border-color:rgba(var(--tint-rgb),.18);transform:translateY(-2px)}
@@ -521,7 +537,8 @@ input.pnl-neg{border-color:var(--neg)!important;box-shadow:0 0 0 3px var(--neg-s
 
 /* ---------- Trades list ---------- */
 .trades{overflow:auto}
-.trade{display:grid;grid-template-columns:auto 1fr auto;gap:var(--sp-3);align-items:center;padding:var(--sp-3) var(--sp-2);position:relative;cursor:pointer;transition:background .15s var(--ease)}
+.trade{display:grid;grid-template-columns:auto 1fr auto;gap:var(--sp-3);align-items:center;padding:var(--sp-3) var(--sp-2);position:relative;cursor:pointer;transition:background .15s var(--ease);animation:rowIn .35s var(--ease) backwards}
+@keyframes rowIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
 .trade-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(var(--tint-rgb),.06);color:var(--muted);flex-shrink:0}
 .trade-icon.pos{background:var(--pos-soft);color:var(--pos)}
 .trade-icon.neg{background:var(--neg-soft);color:var(--neg)}
@@ -666,7 +683,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
 
 /* ---------- Mobile ---------- */
 .trade .hide-mobile{display:none}
-@media(prefers-reduced-motion:reduce){.page.active{animation:none!important}}
+@media(prefers-reduced-motion:reduce){.page.active{animation:none!important}.mesh-blob{animation:none!important}.grid .card,.trade,.skeleton-row{animation:none!important}}
 </style></head><body>
 <div class="app-shell">
 <div class="mesh-bg" aria-hidden="true"><span class="mesh-blob b1"></span><span class="mesh-blob b2"></span><span class="mesh-blob b3"></span></div>
@@ -862,7 +879,7 @@ function animateStat(key,el,newValue,formatter,duration=550){
 function show(id){haptic(6);document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));window.scrollTo(0,0);if(id==='monitor')renderMonitor();if(id==='screener')initScreenerTab();if(id==='settings'){let stored=getDailyLossLimit();$('dailyLossLimitInput').value=stored!==null?stored:''}render()}
 function filtered(){let s=$('search').value.trim().toUpperCase(),r=$('result').value;return trades.filter(t=>(!s||t.symbol.includes(s))&&(!r||(r==='win'?t.pnl>0:t.pnl<0)))}
 function skeletonRows(n){let s='';for(let i=0;i<n;i++)s+=`<div class="skeleton-row"><div class="ghost" style="width:34px;height:34px;border-radius:50%"></div><div style="display:flex;flex-direction:column;gap:6px"><div class="ghost" style="width:60%"></div><div class="ghost" style="width:35%;height:9px"></div></div><div class="ghost" style="width:55px;justify-self:end"></div></div>`;return s}
-function rows(list,fullList=false){if(!list.length)return fullList?emptyState(ICON_JOURNAL,'No trades yet','Log your first trade whenever you\u2019re ready \u2014 tap "+ Log trade" above.'):skeletonRows(3);return list.map(t=>{let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';let iconCls='trade-icon'+(t.pnl>0?' pos':t.pnl<0?' neg':'');let iconSvg=t.pnl>0?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>':t.pnl<0?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 19l-6-6M12 19l6-6"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';return `<div class="trade" onclick="openTradeDetails('${t.id}')"><div class="${iconCls}">${iconSvg}</div><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:0.5px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div style="text-align:right"><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div></div></div>`}).join('')}
+function rows(list,fullList=false){if(!list.length)return fullList?emptyState(ICON_JOURNAL,'No trades yet','Log your first trade whenever you\u2019re ready \u2014 tap "+ Log trade" above.'):skeletonRows(3);return list.map((t,i)=>{let pnlCls=t.pnl>0?'pos':t.pnl<0?'neg':'';let iconCls='trade-icon'+(t.pnl>0?' pos':t.pnl<0?' neg':'');let delay=Math.min(i*35,280);let iconSvg=t.pnl>0?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>':t.pnl<0?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M12 19l-6-6M12 19l6-6"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';return `<div class="trade" style="animation-delay:${delay}ms" onclick="openTradeDetails('${t.id}')"><div class="${iconCls}">${iconSvg}</div><div><div class="symbol">${esc(t.symbol)}${t.screenshot?`<img src="${t.screenshot}" style="width:20px;height:20px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-left:7px;border:0.5px solid var(--card-border)">`:''}</div><div class="muted" style="font-size:12px;margin-top:2px">${esc(t.date)}</div></div><div style="text-align:right"><div class="${pnlCls}" style="font-weight:700">${money(t.pnl)}</div></div></div>`}).join('')}
 let dtCurrentId=null;
 function openTradeDetails(id){let t=trades.find(x=>x.id===id);if(!t)return;dtCurrentId=id;$('dtSymbol').textContent=t.symbol;$('dtDate').textContent=t.date||'';let pnlEl=$('dtPnl');pnlEl.textContent=money(t.pnl);pnlEl.className='value '+(t.pnl>0?'pos':t.pnl<0?'neg':'');let mktClass='mkt-'+(t.type||'stock');let sideClass=(t.side||'Long').toLowerCase()==='short'?'badge-short':'badge-long';let gradeBadge=t.grade?`<span class="badge badge-grade-${t.grade.toLowerCase()}">Grade ${esc(t.grade)}</span>`:'';$('dtBadges').innerHTML=`<span class="badge badge-mkt ${mktClass}">${esc(t.type)}</span><span class="badge ${sideClass}">${esc(t.side||'Long')}</span>${gradeBadge}`;$('dtEntry').textContent=t.entry||'—';$('dtExit').textContent=t.exit||'—';$('dtRR').textContent=t.rr||'—';$('dtSetup').textContent=t.setup||'—';$('dtNotes').textContent=t.notes||'No notes added.';if(t.screenshot){$('dtShot').src=t.screenshot;$('dtShotWrap').style.display='block'}else{$('dtShotWrap').style.display='none'}$('detailsModal').classList.add('open');lockScroll()}
 function closeDetails(){$('detailsModal').classList.remove('open');unlockScroll()}
@@ -1025,11 +1042,13 @@ async function saveTrade(){
   let originalLabel=btn?btn.textContent:'';
   if(btn){btn.disabled=true;btn.textContent='Saving…'}
   try{
+    let wasEditing=!!editing;
     let d=await api(editing?'/api/trades/'+editing:'/api/trades',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});
     trades=d.trades;
     haptic(12);
     closeTrade();
     render();
+    showSuccessToast(wasEditing?'Trade updated':'Trade saved');
   }catch(e){
     $('formMsg').textContent=e.message;
   }finally{
@@ -1052,6 +1071,22 @@ function showUndoToast(){
 function hideUndoToast(){
   let el=document.getElementById('undoToast');
   if(el){el.classList.remove('show');setTimeout(()=>el.remove(),250)}
+}
+let successToastTimer=null;
+function showSuccessToast(message){
+  let existing=document.getElementById('successToast');
+  if(existing)existing.remove();
+  if(successToastTimer)clearTimeout(successToastTimer);
+  let toast=document.createElement('div');
+  toast.id='successToast';
+  toast.className='success-toast';
+  toast.innerHTML=`<span class="success-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span>${esc(message)}</span>`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  successToastTimer=setTimeout(()=>{
+    toast.classList.remove('show');
+    setTimeout(()=>toast.remove(),250);
+  },2200);
 }
 function deleteFromDetails(){
   let id=dtCurrentId;
