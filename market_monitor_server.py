@@ -664,7 +664,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
   <button class="mm-pill active jv-pill" data-view="list" onclick="setJournalView('list')">List</button>
   <button class="mm-pill jv-pill" data-view="calendar" onclick="setJournalView('calendar')">Calendar</button>
 </div>
-<div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button><button onclick="triggerCsvImport()">Import CSV</button><input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)"></div>
+<div class="toolbar"><input id="search" placeholder="Search symbol" oninput="render()"><select id="result" onchange="render()"><option value="">All results</option><option value="win">Winners</option><option value="loss">Losers</option></select><button onclick="downloadCsv()">Export CSV</button><button id="importCsvBtn" onclick="triggerCsvImport()">Import CSV</button><input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)"></div>
 <div class="card trades" id="journalListWrap"><div id="journalList"></div></div>
 <div id="journalCalendarWrap" style="display:none">
   <div class="card">
@@ -731,7 +731,7 @@ code{color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-ra
   <div class="label">Daily loss limit</div>
   <p class="muted">Get a warning on your dashboard when today's losses cross this amount. Stored on this device only.</p>
   <div class="toolbar" style="margin-top:10px">
-    <input id="dailyLossLimitInput" type="number" step="any" placeholder="e.g. 200" style="flex:1">
+    <input id="dailyLossLimitInput" type="number" step="any" min="0" placeholder="e.g. 200" style="flex:1">
     <button class="primary" onclick="saveDailyLossLimit()">Save</button>
   </div>
 </div>
@@ -897,23 +897,30 @@ function generateTradeCardCanvas(t){
   ctx.fillText('Made with Ledger',36,H-24);
   return canvas;
 }
+let shareInFlight=false;
 async function shareTradeCard(){
+  if(shareInFlight)return;
   let t=trades.find(x=>x.id===dtCurrentId);
   if(!t)return;
   let canvas;
   try{canvas=generateTradeCardCanvas(t)}catch(e){alert("Couldn't generate the share image on this device.");return}
+  shareInFlight=true;
   canvas.toBlob(async(blob)=>{
-    if(!blob){alert("Couldn't generate the share image.");return}
-    let filename=`ledger-${(t.symbol||'trade').toLowerCase()}-${t.date||'card'}.png`;
-    let file;
-    try{file=new File([blob],filename,{type:'image/png'})}catch(e){file=null}
-    if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:`${t.symbol} trade`,text:`${t.symbol}: ${money(parseFloat(t.pnl)||0)}`});return}catch(e){/* user cancelled or share failed - fall through to download */}
+    try{
+      if(!blob){alert("Couldn't generate the share image.");return}
+      let filename=`ledger-${(t.symbol||'trade').toLowerCase()}-${t.date||'card'}.png`;
+      let file;
+      try{file=new File([blob],filename,{type:'image/png'})}catch(e){file=null}
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+        try{await navigator.share({files:[file],title:`${t.symbol} trade`,text:`${t.symbol}: ${money(parseFloat(t.pnl)||0)}`});return}catch(e){/* user cancelled or share failed - fall through to download */}
+      }
+      let url=URL.createObjectURL(blob);
+      let a=document.createElement('a');
+      a.href=url;a.download=filename;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }finally{
+      shareInFlight=false;
     }
-    let url=URL.createObjectURL(blob);
-    let a=document.createElement('a');
-    a.href=url;a.download=filename;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
   },'image/png');
 }
 let scrollLockY=0,scrollLockDepth=0;
@@ -1122,7 +1129,37 @@ function renderSetupBreakdown(){
 }
 
 /* ---------- Journal: CSV import ---------- */
-function triggerCsvImport(){$('csvImportInput').click()}
+function triggerCsvImport(){if(csvImportInFlight)return;$('csvImportInput').click()}
+let csvImportInFlight=false;
+async function handleCsvImport(e){
+  let file=e.target.files[0];
+  if(!file)return;
+  if(csvImportInFlight)return;
+  csvImportInFlight=true;
+  let btn=$('importCsvBtn');
+  let originalLabel=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Importing…'}
+  try{
+    let text=await file.text();
+    let lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+    if(lines.length<2){alert('That CSV looks empty.');return}
+    let headers=parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+    let imported=0,failed=0;
+    for(let i=1;i<lines.length;i++){
+      let values=parseCsvLine(lines[i]);
+      let obj={};
+      headers.forEach((h,idx)=>obj[h]=values[idx]??'');
+      if(!obj.symbol||!obj.symbol.trim()){failed++;continue}
+      try{let d=await api('/api/trades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});trades=d.trades;imported++}catch(err){failed++}
+    }
+    render();
+    alert(`Imported ${imported} trade${imported===1?'':'s'}.`+(failed?` ${failed} row${failed===1?'':'s'} skipped (missing symbol or invalid data).`:''));
+  }finally{
+    csvImportInFlight=false;
+    if(btn){btn.disabled=false;btn.textContent=originalLabel}
+    e.target.value='';
+  }
+}
 
 /* ---------- Position size / risk calculator ---------- */
 function runRiskCalc(){
@@ -1165,25 +1202,6 @@ function renderDailyLossWarning(){
   }
 }
 function parseCsvLine(line){let result=[],cur='',inQuotes=false;for(let i=0;i<line.length;i++){let c=line[i];if(inQuotes){if(c==='"'){if(line[i+1]==='"'){cur+='"';i++}else inQuotes=false}else cur+=c}else{if(c==='"')inQuotes=true;else if(c===','){result.push(cur);cur=''}else cur+=c}}result.push(cur);return result}
-async function handleCsvImport(e){
-  let file=e.target.files[0];
-  if(!file)return;
-  let text=await file.text();
-  let lines=text.split(/\r?\n/).filter(l=>l.trim().length);
-  if(lines.length<2){alert('That CSV looks empty.');e.target.value='';return}
-  let headers=parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
-  let imported=0,failed=0;
-  for(let i=1;i<lines.length;i++){
-    let values=parseCsvLine(lines[i]);
-    let obj={};
-    headers.forEach((h,idx)=>obj[h]=values[idx]??'');
-    if(!obj.symbol||!obj.symbol.trim()){failed++;continue}
-    try{let d=await api('/api/trades',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});trades=d.trades;imported++}catch(err){failed++}
-  }
-  render();
-  alert(`Imported ${imported} trade${imported===1?'':'s'}.`+(failed?` ${failed} row${failed===1?'':'s'} skipped (missing symbol or invalid data).`:''));
-  e.target.value='';
-}
 (function(){let installEvent;const button=$('installBtn');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;button.hidden=false});window.installApp=async()=>{if(!installEvent)return;installEvent.prompt();await installEvent.userChoice;installEvent=null;button.hidden=true};window.addEventListener('appinstalled',()=>button.hidden=true);if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})})();
 /* ---------- Market Monitor (simulated feed) ---------- */
 function mmMakeSparkline(sentiment){let pts=[100];for(let i=0;i<9;i++){let drift=sentiment==='bullish'?(Math.random()*1.1-0.15):(Math.random()*1.1-0.95);pts.push(pts[pts.length-1]+drift)}return pts}
@@ -1202,29 +1220,43 @@ function openNewsDetails(id){let n=mmFeed.find(x=>x.id===id);if(!n)return;mmCurr
 function closeNewsDetails(){$('newsPanel').classList.remove('open');unlockScroll()}
 
 /* ---------- Live news polling (real Finnhub-backed feed via our own /api/news) ---------- */
+let mmFetchInFlight=false;
 async function mmFetchNews(){
-  let res,data;
-  try{res=await fetch('/api/news');data=await res.json()}catch(e){return}
-  mmConfigured=!!data.configured;
-  if(!mmConfigured){renderMonitor();return}
-  let incoming=data.items||[];
-  let freshRaw=mmFirstLoad?[]:incoming.filter(it=>!mmSeenIds.has(it.id));
-  incoming.forEach(it=>mmSeenIds.add(it.id));
-  mmFeed=incoming.map(raw=>mmMapItem(raw,freshRaw.some(x=>x.id===raw.id)));
-  renderMonitor();
-  if(!mmFirstLoad)freshRaw.forEach(raw=>fireBreakingNotification(mmMapItem(raw,true)));
-  mmFirstLoad=false;
+  if(mmFetchInFlight)return;
+  mmFetchInFlight=true;
+  try{
+    let res,data;
+    try{res=await fetch('/api/news');data=await res.json()}catch(e){return}
+    mmConfigured=!!data.configured;
+    if(!mmConfigured){renderMonitor();return}
+    let incoming=data.items||[];
+    let freshRaw=mmFirstLoad?[]:incoming.filter(it=>!mmSeenIds.has(it.id));
+    incoming.forEach(it=>mmSeenIds.add(it.id));
+    mmFeed=incoming.map(raw=>mmMapItem(raw,freshRaw.some(x=>x.id===raw.id)));
+    renderMonitor();
+    if(!mmFirstLoad)freshRaw.forEach(raw=>fireBreakingNotification(mmMapItem(raw,true)));
+    mmFirstLoad=false;
+  }finally{
+    mmFetchInFlight=false;
+  }
 }
 function mmStartPolling(){if(mmPollTimer)return;mmFetchNews();mmPollTimer=setInterval(mmFetchNews,30000)}
 
 /* ---------- Earnings calendar ---------- */
 let earningsFeed=[],earningsConfigured=true;
+let earningsFetchInFlight=false;
 async function mmFetchEarnings(){
-  let res,data;
-  try{res=await fetch('/api/earnings');data=await res.json()}catch(e){return}
-  earningsConfigured=!!data.configured;
-  earningsFeed=data.items||[];
-  renderEarnings();
+  if(earningsFetchInFlight)return;
+  earningsFetchInFlight=true;
+  try{
+    let res,data;
+    try{res=await fetch('/api/earnings');data=await res.json()}catch(e){return}
+    earningsConfigured=!!data.configured;
+    earningsFeed=data.items||[];
+    renderEarnings();
+  }finally{
+    earningsFetchInFlight=false;
+  }
 }
 function renderEarnings(){
   let el=$('earningsList');
