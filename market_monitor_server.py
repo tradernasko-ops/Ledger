@@ -1298,8 +1298,18 @@ function renderEarnings(){
 /* ---------- Breaking alerts (Notification API) ---------- */
 let breakingAlertsEnabled=false;
 function updateAlertsButton(){let btn=$('alertsToggleBtn');if(!btn)return;btn.textContent=breakingAlertsEnabled?'🔔 Alerts On':'🔔 Enable Breaking Alerts';btn.classList.toggle('alerts-on',breakingAlertsEnabled)}
-function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();try{new Notification('Breaking alerts enabled',{body:'You will be notified when new live market headlines break.'})}catch(e){}}else{alert('Notification permission was not granted.')}})}
-function fireBreakingNotification(entry){if(!breakingAlertsEnabled)return;if(!('Notification' in window)||Notification.permission!=='granted')return;let up=entry.sentiment==='bullish';let title=(up?'🟢 BULLISH':'🔴 BEARISH')+' · '+entry.tickerDisplay;try{new Notification(title,{body:entry.headline,tag:entry.id})}catch(e){}}
+/* ---------- Notification helper (iOS Safari requires going through the service worker - new Notification() does not work there at all) ---------- */
+async function showAppNotification(title,options){
+  try{
+    if('serviceWorker' in navigator){
+      let reg=await navigator.serviceWorker.ready;
+      if(reg&&reg.showNotification){await reg.showNotification(title,options);return}
+    }
+    if('Notification' in window&&Notification.permission==='granted'){new Notification(title,options)}
+  }catch(e){}
+}
+function toggleBreakingAlerts(){if(!('Notification' in window)){alert('This browser does not support desktop notifications.');return}if(breakingAlertsEnabled){breakingAlertsEnabled=false;updateAlertsButton();return}if(Notification.permission==='granted'){breakingAlertsEnabled=true;updateAlertsButton();return}Notification.requestPermission().then(perm=>{if(perm==='granted'){breakingAlertsEnabled=true;updateAlertsButton();showAppNotification('Breaking alerts enabled',{body:'You will be notified when new live market headlines break.',icon:'/icon-192.png'})}else{alert('Notification permission was not granted.')}})}
+function fireBreakingNotification(entry){if(!breakingAlertsEnabled)return;if(!('Notification' in window)||Notification.permission!=='granted')return;let up=entry.sentiment==='bullish';let title=(up?'🟢 BULLISH':'🔴 BEARISH')+' · '+entry.tickerDisplay;showAppNotification(title,{body:entry.headline,tag:entry.id,icon:'/icon-192.png'})}
 /* ---------- Haptics (Android Chrome supports Vibration API; iOS Safari does not - this is a graceful no-op there) ---------- */
 function haptic(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
 
@@ -1440,7 +1450,7 @@ MANIFEST = json.dumps({
         {'src': '/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any maskable'},
     ],
 })
-SERVICE_WORKER = """const CACHE='ledger-v4';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/manifest.webmanifest','/icon-192.png']))));self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(e.request.method==='GET'&&new URL(e.request.url).origin===location.origin&&new URL(e.request.url).pathname==='/')e.respondWith(fetch(e.request).catch(()=>caches.match('/')))});"""
+SERVICE_WORKER = """const CACHE='ledger-v4';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/manifest.webmanifest','/icon-192.png']))));self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(e.request.method==='GET'&&new URL(e.request.url).origin===location.origin&&new URL(e.request.url).pathname==='/')e.respondWith(fetch(e.request).catch(()=>caches.match('/')))});self.addEventListener('notificationclick',e=>{e.notification.close();e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus' in c)return c.focus()}if(self.clients.openWindow)return self.clients.openWindow('/')}))});"""
 
 
 class Handler(BaseHTTPRequestHandler):
