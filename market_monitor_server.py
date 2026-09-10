@@ -1129,7 +1129,19 @@ function undoDelete(){
   }
   hideUndoToast();
 }
-function downloadCsv(){let r=filtered();if(!r.length)return;let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','notes'];let csv=[heads,...r.map(t=>heads.map(h=>JSON.stringify(t[h]??'')))].map(x=>x.join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='ledger-trades.csv';a.click()}
+function csvEscape(val){let s=String(val??'');if(/[",\r\n]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s}
+function downloadCsv(){
+  let r=filtered();
+  if(!r.length)return;
+  let heads=['date','type','symbol','side','pnl','setup','entry','exit','rr','grade','notes'];
+  let lines=[heads.join(',')];
+  r.forEach(t=>{lines.push(heads.map(h=>csvEscape(t[h])).join(','))});
+  let csv='\uFEFF'+lines.join('\r\n');
+  let a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='ledger-trades.csv';
+  a.click();
+}
 
 /* ---------- Journal: List/Calendar toggle ---------- */
 let journalView='list';
@@ -1195,6 +1207,7 @@ async function handleCsvImport(e){
   if(btn){btn.disabled=true;btn.textContent='Importing…'}
   try{
     let text=await file.text();
+    if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
     let lines=text.split(/\r?\n/).filter(l=>l.trim().length);
     if(lines.length<2){alert('That CSV looks empty.');return}
     let headers=parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
